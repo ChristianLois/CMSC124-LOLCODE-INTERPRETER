@@ -32,7 +32,7 @@ TOKENS = [
     (r"^MAEK\s", "Typecast Keyword"),
     (r"^A\s", "Typecast Keyword"),
     (r"^IS NOW A\s", "Typecast Keyword"),
-    (r"^VISIBLE\s", "Ouput Keyword"),
+    (r"^VISIBLE\s", "Output Keyword"),
     (r"^GIMMEH\s", "Input Keyword"),
     (r"^O RLY\?\s", "If-else Start"),
     (r"^YA RLY\s", "If Keyword"),

@@ -3,6 +3,7 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename      # for cho
 from tkinter import ttk                 #for tables of lexemes and symbols
 from tkinter import messagebox
 from Lexer import Lexer
+from Parser import Parser
 import tkinter.font as tkfont
 
 def openFile():        #for opening file
@@ -38,12 +39,23 @@ def execute():
     
     lexemeTable.delete(*lexemeTable.get_children())     #reset lexeme table
 
+    parser = Parser(lexemes)
+    symbolTree = parser.lolProgram()
+
+    # print(symbolTree.children_nodes)
+    for symbol in symbolTree.children_nodes:
+        print(symbol.type)
+        if(symbol.children_nodes != None):
+            for i in symbol.children_nodes:
+                print(i.type)
+
     if isinstance(lexemes,str):         #catch if error
         messagebox.showinfo("Error",lexemes)
     else:
         for lex in lexemes:         #insert values
             if lex.type != 'Linebreak' and lex.type != 'Comment' and lex.type != 'Comment Delimiter' and lex.type != 'Multiline Comment Start' and lex.type != 'Multiline Comment End':
                 lexemeTable.insert(parent='', index='end', values=(lex.value, lex.type))
+    
             
 
 window = Tk()
