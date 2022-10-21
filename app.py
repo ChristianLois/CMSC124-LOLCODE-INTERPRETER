@@ -42,13 +42,6 @@ def execute():
     parser = Parser(lexemes)
     symbolTree = parser.lolProgram()
 
-    # print(symbolTree.children_nodes)
-    for symbol in symbolTree.children_nodes:
-        print(symbol.type)
-        if(symbol.children_nodes != None):
-            for i in symbol.children_nodes:
-                print(i.type)
-
     if isinstance(lexemes,str):         #catch if error
         messagebox.showinfo("Error",lexemes)
     else:
