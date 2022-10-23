@@ -171,7 +171,7 @@ class Parser:
         return ATNode('Infinite Operands', children_nodes = childNodes)
     # ------------------------LITERALS/EXPRESISON/VARIABLE------------------------
 
-    # ------------------------PRINT------------------------
+    # ------------------------I/O------------------------
     def visible(self):
         childNodes = deque()
         if(self.current_token.type == 'Output Keyword'):
@@ -197,12 +197,28 @@ class Parser:
     
         return ATNode('Print Statements', children_nodes = childNodes)
     
+    def gimmeh(self):
+        childNodes = deque()
+        if(self.current_token.type == 'Input Keyword'):
+            self.nextToken('Input Keyword')
+            childNodes.append(ATNode('Gimmeh'))
+        else:
+            return False
+        
+        childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+        self.nextToken('Variable Identifier')
+
+        return ATNode('Input Statement', children_nodes = childNodes)
+
+    # ------------------------I/O------------------------
+    
     # ------------------------ASSIGNMENT------------------------
     def assignment(self):
         childNodes = deque()
 
         if(self.current_token.type == 'Variable Identifier'):
             childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+            self.nextToken('Variable Identifier')
         else:
             return False
         
@@ -225,6 +241,9 @@ class Parser:
             childNodes.append(assignment)
         elif(exprvar := self.exprvar(True)):
             childNodes.append(exprvar)
+        elif(gimmeh := self.gimmeh()):
+            childNodes.append(gimmeh)
+        
         
         self.nextToken('Linebreak')
         childNodes.append(ATNode('Linebreak'))
