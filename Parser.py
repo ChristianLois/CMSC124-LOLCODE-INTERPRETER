@@ -8,23 +8,22 @@ class Parser:
         self.current_token = self.tokens[self.token_idx]
     
     def nextToken(self, token_type):
-        if self.current_token.type == token_type:
+        if self.token_idx + 1 < len(self.tokens) and self.current_token.type == token_type:
             self.token_idx += 1
             self.current_token = self.tokens[self.token_idx]
         else:
-            raise Exception(f"Syntax Error in line number {self.current_token.line_num}: Expected {token_type} but saw {self.current_token.type}")
+            raise Exception(f"Syntax Error:{self.current_token.line_num}:Expected {token_type} at {self.current_token.value}")
 
     # ------------------------LITERALS/EXPRESISON/VARIABLE------------------------
-    def exprvar(self):
+    def exprvar(self, infAr):
         childNodes = deque()
         if (literal := self.literal()):
-            print('Enter 2')
             childNodes.append(literal)
         elif (self.current_token.type == 'Variable Identifier'):
             childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
             self.nextToken('Variable Identifier')
-        # elif (expression := self.expression()):
-        #     childNodes.append(expression)
+        elif (expression := self.expression(infAr)):
+            childNodes.append(expression)
         else:
             return False
         
@@ -47,19 +46,131 @@ class Parser:
         childNodes = deque()
         if (self.current_token.type == 'String Delimiter'):
             self.nextToken('String Delimiter')
-            if(self.current_token.type == 'Yarn Literal'):
-                childNodes.append(ATNode('Yarn Literal', value = self.current_token.value))
-                self.nextToken('Yarn Literal')
-            if (self.current_token.type == 'String Delimiter'):
-                self.nextToken('String Delimiter')
+            val = self.current_token.value
+            self.nextToken('Yarn Literal')
+            childNodes.append(ATNode('Yarn Literal', value = self.current_token.value))
+
+            self.nextToken('String Delimiter')
         else:
             return False
 
-
         return ATNode('Yarn Literal', children_nodes = childNodes)
 
-    # def expression(self):
+    def expression(self, infAr):
+        childNodes = deque()
+        if(add := self.binaryOp('Addition')):
+            childNodes.append(add)
+        elif(subtract := self.binaryOp('Subtraction')):
+            childNodes.append(subtract)
+        elif(mult := self.binaryOp('Multiplication')):
+            childNodes.append(mult)
+        elif(div := self.binaryOp('Division')):
+            childNodes.append(div)
+        elif(mod := self.binaryOp('Modulo')):
+            childNodes.append(mod)
+        elif(maxim := self.binaryOp('Max')):
+            childNodes.append(maxim)
+        elif(minim := self.binaryOp('Min')):
+            childNodes.append(minim)
+        elif(andOp := self.binaryOp('And')):
+            childNodes.append(andOp)
+        elif(orOp := self.binaryOp('Or')):
+            childNodes.append(orOp)
+        elif(xorOp := self.binaryOp('Xor')):
+            childNodes.append(xorOp) 
+        elif(notOp := self.unaryOp('Not')):
+            childNodes.append(notOp)
+        elif(eqCheck := self.binaryOp('Equality Check')):
+            childNodes.append(eqCheck)
+        elif(ineqCheck := self.binaryOp('Inequality Check')):
+            childNodes.append(ineqCheck)
+        elif(concat := self.infOp('Concatenate', False)):
+            childNodes.append(concat)
+        elif(infAr and (infAnd := self.infOp('Infinite And', True))):
+            childNodes.append(infAnd)
+        elif(infAr and (infOr := self.infOp('Infinite Or', True))):
+            childNodes.append(infOr)
+        else:
+            return False
+        
+        return ATNode('Expression', children_nodes = childNodes)
+    
+    def binaryOp(self, operation):
+        childNodes = deque()
+        if(self.current_token.type == operation):
+            childNodes.append(ATNode(operation))
+            self.nextToken(operation)
+        else:
+            return False
+        
+        if(exprvar := self.exprvar(True)):
+            childNodes.append(exprvar)
+        else:
+            self.nextToken('Expression')
+        
+        self.nextToken('Operation Delimiter')
 
+        if(exprvar := self.exprvar(True)):
+            childNodes.append(exprvar)
+        else:
+            self.nextToken('Expression')
+        
+        return ATNode(operation, children_nodes = childNodes)
+    
+    def unaryOp(self, operation):
+        childNodes = deque()
+        if(self.current_token.type == operation):
+            childNodes.append(ATNode(operation))
+            self.nextToken(operation)
+        else:
+            return False
+        
+        if(exprvar := self.exprvar(True)):
+            childNodes.append(exprvar)
+        else:
+            self.nextToken('Expression')
+        
+        return ATNode(operation, children_nodes = childNodes)
+    
+    def infOp(self, operation, boolean):
+        childNodes = deque()
+        if(self.current_token.type == operation):
+            childNodes.append(operation)
+            self.nextToken(operation)
+        else:
+            return False
+
+        if(boolean and (exprvar := self.exprvar(False))):
+            childNodes.append(exprvar)
+        elif(not boolean and (exprvar := self.exprvar(True))):
+            childNodes.append(exprvar)
+        else:
+            self.nextToken('Expression')
+        
+        operands = self.infOperands(deque(), boolean)
+        childNodes.append(operands)
+
+        if(boolean):
+            self.nextToken('Infinite Bool End')
+        elif(self.current_token.type == 'Infinite Bool End'):   # makes MKAY in SMOOSH optional
+            self.nextToken('Infinite Bool End')
+
+        return ATNode(operation, children_nodes = childNodes)
+        
+    def infOperands(self, childNodes, boolean):
+        self.nextToken('Operation Delimiter')
+
+        if(boolean and (exprvar := self.exprvar(False))):
+            childNodes.append(exprvar)
+        elif(not boolean and (exprvar := self.exprvar(True))):
+            childNodes.append(exprvar)
+        else:
+            self.nextToken('Expression')
+        
+        if(self.current_token.type == 'Operation Delimiter'):
+            childNodes.append(self.infOperands(childNodes, boolean))
+        
+        return ATNode('Infinite Operands', children_nodes = childNodes)
     # ------------------------LITERALS/EXPRESISON/VARIABLE------------------------
 
     # ------------------------PRINT------------------------
@@ -76,14 +187,16 @@ class Parser:
         return ATNode('Output Statement', children_nodes = childNodes)
 
     def printNodes(self, childNodes):
-        exprvar = self.exprvar()
+        exprvar = self.exprvar(True)
+        if(not exprvar):
+            self.nextToken('Expression')
         childNodes.append(exprvar)
 
+        if(self.current_token.type == 'Operation Delimiter'):
+            self.nextToken('Operation Delimiter')
         if(self.current_token.type != 'Comment Delimiter' and self.current_token.type != 'Linebreak'):
-            print('Enter')
             childNodes.append(self.printNodes(childNodes))
     
-        
         return ATNode('Print Statements', children_nodes = childNodes)
     # ------------------------PRINT------------------------
     def statement(self):
@@ -111,7 +224,7 @@ class Parser:
         treeNode.append(ATNode('Linebreak'))
 
         # Code Body
-        if(self.current_token.type != 'Code End'):
+        while(self.current_token.type != 'Code End'):
             statement = self.statement()
             treeNode.append(statement)
         
@@ -120,5 +233,3 @@ class Parser:
         treeNode.append(ATNode('Code End'))
 
         return ATNode('LOLProgram', children_nodes = treeNode)
-        
-

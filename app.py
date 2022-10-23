@@ -39,8 +39,9 @@ def execute():
     
     lexemeTable.delete(*lexemeTable.get_children())     #reset lexeme table
 
-    parser = Parser(lexemes)
-    symbolTree = parser.lolProgram()
+    if (len(lexemes) > 0):
+        parser = Parser(lexemes)
+        symbolTree = parser.lolProgram()
 
     if isinstance(lexemes,str):         #catch if error
         messagebox.showinfo("Error",lexemes)
