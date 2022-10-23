@@ -48,7 +48,7 @@ class Parser:
             self.nextToken('String Delimiter')
             val = self.current_token.value
             self.nextToken('Yarn Literal')
-            childNodes.append(ATNode('Yarn Literal', value = self.current_token.value))
+            childNodes.append(ATNode('Yarn Literal', value = val))
 
             self.nextToken('String Delimiter')
         else:
@@ -152,8 +152,6 @@ class Parser:
 
         if(boolean):
             self.nextToken('Infinite Bool End')
-        elif(self.current_token.type == 'Infinite Bool End'):   # makes MKAY in SMOOSH optional
-            self.nextToken('Infinite Bool End')
 
         return ATNode(operation, children_nodes = childNodes)
         
@@ -198,12 +196,35 @@ class Parser:
             childNodes.append(self.printNodes(childNodes))
     
         return ATNode('Print Statements', children_nodes = childNodes)
-    # ------------------------PRINT------------------------
+    
+    # ------------------------ASSIGNMENT------------------------
+    def assignment(self):
+        childNodes = deque()
+
+        if(self.current_token.type == 'Variable Identifier'):
+            childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+        else:
+            return False
+        
+        self.nextToken('Assignment')
+        childNodes.append(ATNode('Assignment'))
+
+        if(exprvar := self.exprvar(True)):
+            childNodes.append(exprvar)
+        else:
+            self.nextToken('Expression')
+        
+        return ATNode('Assignment Statement', children_nodes = childNodes)
+    # ------------------------ASSIGNMENT------------------------
     def statement(self):
         childNodes = deque()
 
         if(visible := self.visible()):
             childNodes.append(visible)
+        elif(assignment := self.assignment()):
+            childNodes.append(assignment)
+        elif(exprvar := self.exprvar(True)):
+            childNodes.append(exprvar)
         
         self.nextToken('Linebreak')
         childNodes.append(ATNode('Linebreak'))
