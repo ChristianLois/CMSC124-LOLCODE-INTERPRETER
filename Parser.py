@@ -362,6 +362,72 @@ class Parser:
             childNodes.append(statement)
         
         return ATNode('Case', children_nodes = childNodes)
+    
+    def ifElse(self):
+        childNodes = deque()
+
+        if(self.current_token.type == 'If-else Start'):
+            self.nextToken('If-else Start')
+            childNodes.append(ATNode('If-else Start'))
+        else:
+            return False
+        
+        self.nextToken('Linebreak')
+        childNodes.append(ATNode('Linebreak'))
+
+        self.nextToken('If Keyword')
+        childNodes.append(ATNode('If Keyword'))
+
+        self.nextToken('Linebreak')
+        childNodes.append(ATNode('Linebreak'))
+
+        while(self.current_token.type != 'Else-if Keyword' and 
+        self.current_token.type != 'Else Keyword' and 
+        self.current_token.type != 'If-else End'):
+            statement = self.statement()
+            childNodes.append(statement)
+        
+        while self.current_token.type == 'Else-if Keyword':
+            mebbe = self.mebbe()
+            childNodes.append(mebbe)
+
+        if self.current_token.type == 'Else Keyword':
+            self.nextToken('Else Keyword')
+            childNodes.append(ATNode('Else Keyword'))
+
+            self.nextToken('Linebreak')
+            childNodes.append(ATNode('Linebreak'))
+
+            while(self.current_token.type != 'If-else End'):
+                statement = self.statement()
+                childNodes.append(statement)
+
+        self.nextToken('If-else End')
+        childNodes.append(ATNode('If-else End'))
+        return(ATNode('If-else Statement', children_nodes = childNodes))
+
+    def mebbe(self):
+        childNodes = deque()
+
+        self.nextToken('Else-if Keyword')
+        childNodes.append(ATNode('Else-if Keyword'))
+
+        if(exprvar := self.exprvar(True)):
+            childNodes.append(exprvar)
+        else:
+            self.nextToken('Expression')
+
+        self.nextToken('Linebreak')
+        childNodes.append(ATNode('Linebreak'))
+
+        while(self.current_token.type != 'Else-if Keyword' and 
+        self.current_token.type != 'Else Keyword' and 
+        self.current_token.type != 'If-else End'):
+            statement = self.statement()
+            childNodes.append(statement)
+        
+        return ATNode('Else-if', children_nodes = childNodes)
+
     # ------------------------CONTROL------------------------
 
     def statement(self):
@@ -383,6 +449,9 @@ class Parser:
             childNodes.append(switch)
         elif(declaration := self.declaration()):
             childNodes.append(declaration)
+        elif(if_else := self.ifElse()):
+            childNodes.append(if_else)
+
         self.nextToken('Linebreak')
         childNodes.append(ATNode('Linebreak'))
         return ATNode('Statement', children_nodes = childNodes)
