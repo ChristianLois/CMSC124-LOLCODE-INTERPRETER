@@ -1,5 +1,6 @@
 OBTW
-This is a sample program in lolcode that computes for the age in years or months.
+This is a sample program in lolcode that 
+computes for the age in years or months.
 TLDR
 
 HAI 1.2

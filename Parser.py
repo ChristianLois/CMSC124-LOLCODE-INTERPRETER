@@ -21,6 +21,7 @@ class Parser:
             childNodes.append(literal)
         elif (self.current_token.type == 'Variable Identifier'):
             childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+            print(self.current_token.value)
             self.nextToken('Variable Identifier')
         elif (expression := self.expression(infAr)):
             childNodes.append(expression)
@@ -195,7 +196,7 @@ class Parser:
         if(self.current_token.type != 'Comment Delimiter' and self.current_token.type != 'Linebreak'):
             childNodes.append(self.printNodes(childNodes))
     
-        return ATNode('Print Statements', children_nodes = childNodes)
+        return ATNode('Print Expressions', children_nodes = childNodes)
     
     def gimmeh(self):
         childNodes = deque()
@@ -213,6 +214,30 @@ class Parser:
     # ------------------------I/O------------------------
     
     # ------------------------ASSIGNMENT------------------------
+    def declaration(self):
+        childNodes = deque()
+
+        if(self.current_token.type == 'Variable Declaration'):
+            childNodes.append(ATNode('Variable Declaration'))
+            self.nextToken('Variable Declaration')
+        else:
+            return False
+        
+        childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+        self.nextToken('Variable Identifier')
+
+        if self.current_token.type != 'Linebreak':
+            self.nextToken('Variable Assignment')
+            childNodes.append(ATNode('Variable Assignment'))
+
+            if(exprvar := self.exprvar(True)):
+                childNodes.append(exprvar)
+            else:
+                self.nextToken('Expression')
+        
+        return ATNode('Declaration Statement', children_nodes = childNodes)
+
+
     def assignment(self):
         childNodes = deque()
 
@@ -222,8 +247,13 @@ class Parser:
         else:
             return False
         
-        self.nextToken('Assignment')
-        childNodes.append(ATNode('Assignment'))
+        if self.current_token.type == 'Assignment':
+            self.nextToken('Assignment')
+            childNodes.append(ATNode('Assignment'))
+        else:
+            self.token_idx -= 1
+            self.current_token = self.tokens[self.token_idx]
+            return False
 
         if(exprvar := self.exprvar(True)):
             childNodes.append(exprvar)
@@ -232,6 +262,108 @@ class Parser:
         
         return ATNode('Assignment Statement', children_nodes = childNodes)
     # ------------------------ASSIGNMENT------------------------
+
+    # ------------------------CONTROL------------------------
+    def loop(self):
+        childNodes = deque()
+        if(self.current_token.type == 'Loop Start'):
+            childNodes.append(ATNode('Loop Start'))
+            self.nextToken('Loop Start')
+        else:
+            return False
+        
+        childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+        self.nextToken('Variable Identifier')
+
+        childNodes.append(ATNode('Loop Operation', value = self.current_token.value))
+        self.nextToken('Loop Operation')
+
+        self.nextToken('Loop Delimiter')
+        childNodes.append(ATNode('Loop Delimiter'))
+
+        childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+        self.nextToken('Variable Identifier')
+
+        if(self.current_token.type == 'Condition Keyword'):
+            childNodes.append(ATNode('Condition Keyword', value = self.current_token.value))
+            self.nextToken('Condition Keyword')
+            expression = self.expression(True)
+            childNodes.append(expression)
+        
+        self.nextToken('Linebreak')
+        childNodes.append(ATNode('Linebreak'))
+
+        while(self.current_token.type != 'Loop End'):
+            statement = self.statement()
+            childNodes.append(statement)
+
+        self.nextToken('Loop End')
+        childNodes.append(ATNode('Loop End'))
+
+        childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+        self.nextToken('Variable Identifier')
+
+        return ATNode('Loop Statement', children_nodes = childNodes)
+
+    def gtfo(self):
+        childNodes = deque()
+        if self.current_token.type == 'Break':
+            childNodes.append(ATNode('Break'))
+            self.nextToken('Break')
+        else:
+            return False
+    
+    def switch(self):
+        childNodes = deque()
+        if self.current_token.type == 'Switch-case Start':
+            childNodes.append(ATNode('Switch-case Start'))
+            self.nextToken('Switch-case Start')
+        else:
+            return False
+        
+        self.nextToken('Linebreak')
+        childNodes.append(ATNode('Linebreak'))
+
+        case = self.case()
+        childNodes.append(case)
+
+        while self.current_token.type == 'Case Keyword':
+            case = self.case()
+            childNodes.append(case)
+        
+        if self.current_token.type == 'Case Default Keyword':
+            self.nextToken('Case Default Keyword')
+            childNodes.append(ATNode('Case Default Keyword'))
+            while(self.current_token.type != 'If-else End'):
+                statement = self.statement()
+                childNodes.append(statement)
+        
+        self.nextToken('If-else End')
+        childNodes.append(ATNode('If-else End'))
+
+        return ATNode('Switch Statement', children_nodes = childNodes)
+    
+    def case(self):
+        childNodes = deque()
+
+        self.nextToken('Case Keyword')
+        childNodes.append(ATNode('Case Keyword'))
+
+        if(literal := self.literal()):
+            childNodes.append(literal)
+        else:
+            self.nextToken('Literal')
+        
+
+        while(self.current_token.type != 'If-else End' and 
+        self.current_token.type != 'Case Keyword' and
+        self.current_token.type != 'Case Default Keyword'):
+            statement = self.statement()
+            childNodes.append(statement)
+        
+        return ATNode('Case', children_nodes = childNodes)
+    # ------------------------CONTROL------------------------
+
     def statement(self):
         childNodes = deque()
 
@@ -243,8 +375,14 @@ class Parser:
             childNodes.append(exprvar)
         elif(gimmeh := self.gimmeh()):
             childNodes.append(gimmeh)
-        
-        
+        elif(loop := self.loop()):
+            childNodes.append(loop)
+        elif(gtfo := self.gtfo()):
+            childNodes.append(gtfo)
+        elif(switch := self.switch()):
+            childNodes.append(switch)
+        elif(declaration := self.declaration()):
+            childNodes.append(declaration)
         self.nextToken('Linebreak')
         childNodes.append(ATNode('Linebreak'))
         return ATNode('Statement', children_nodes = childNodes)

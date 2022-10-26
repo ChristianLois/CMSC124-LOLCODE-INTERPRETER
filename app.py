@@ -43,11 +43,14 @@ def execute():
         parser = Parser(lexemes)
         symbolTree = parser.lolProgram()
 
+    for i in symbolTree.children_nodes:
+        print(i.type)
+
     if isinstance(lexemes,str):         #catch if error
         messagebox.showinfo("Error",lexemes)
     else:
         for lex in lexemes:         #insert values
-            if lex.type != 'Linebreak' and lex.type != 'Comment' and lex.type != 'Comment Delimiter' and lex.type != 'Multiline Comment Start' and lex.type != 'Multiline Comment End':
+            if lex.type != 'Linebreak':
                 lexemeTable.insert(parent='', index='end', values=(lex.value, lex.type))
     
             
