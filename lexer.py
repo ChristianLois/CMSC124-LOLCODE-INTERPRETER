@@ -29,8 +29,8 @@ TOKENS = [
     (r"^BOTH SAEM\s", "Equality Check"),
     (r"^DIFFRINT\s", "Inequality Check"),
     (r"^SMOOSH\s", "Concatenate"),
-    (r"^MAEK\s", "Typecast Keyword"),
-    (r"^A\s", "Typecast Keyword"),
+    (r"^MAEK\s", "Maek Keyword"),
+    (r"^A\s", "A Keyword"),
     (r"^IS NOW A\s", "Typecast Keyword"),
     (r"^VISIBLE\s", "Output Keyword"),
     (r"^GIMMEH\s", "Input Keyword"),
@@ -69,16 +69,24 @@ class Lexer:
         in_comment = False
         for line in lines:
             line = line.strip()+'\n'
-            if(in_comment):
-                if(line[:-1] == "TLDR"):
-                    in_comment = False
-                    tokens.append(Token('Multiline Comment End', line.strip(), line_no))
-                else:
-                    tokens.append(Token('Comment', line.strip(), line_no))
-                continue
             hasToken = False
             while(line != '\n' and line !=''):
                 hasToken = True
+                if(in_comment):
+                    tldr_check = re.search(r"\sTLDR\s", line)
+                    if(line[:4] == 'TLDR'):
+                        token_value = matched_token.group(0)
+                        tokens.append(Token('Multiline Comment End', line[:4], line_no))
+                        line = line[4:].lstrip()
+                        in_comment = False
+                    elif(tldr_check):
+                        start = tldr_check.span()[0]
+                        tokens.append(Token('Comment', line[:start+1].strip(), line_no))
+                        line = line[start+1:]
+                    else:
+                        tokens.append(Token('Comment', line[:-1], line_no))
+                        line = line[len(line):]
+                    continue
                 for token in TOKENS:       
                     pattern, type = token
                     matched_token = re.match(pattern, line)
@@ -93,7 +101,7 @@ class Lexer:
                         elif type == 'Multiline Comment Start':
                             token_value = matched_token.group(0)
                             tokens.append(Token(type, token_value.strip(), line_no))
-                            in_comment = True
+                            in_comment = True  
                         elif type == 'Yarn Literal':
                             temp_token = matched_token.group(0)
                             tokens.append(Token('String Delimiter', '"', line_no))
@@ -104,7 +112,7 @@ class Lexer:
                             tokens.append(Token(type, token_value.strip(), line_no))
                         line = line[matched_token.end():].lstrip()
                         break
-                if(not matched_token):
+                if(not matched_token and not in_comment):
                     raise Exception(f"Error in line number {line_no}: Invalid token {line}")
             if(hasToken and not in_comment):
                 tokens.append(Token('Linebreak', '\\n', line_no))

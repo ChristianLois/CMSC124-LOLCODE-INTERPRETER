@@ -11,6 +11,10 @@ class Parser:
         if self.token_idx + 1 < len(self.tokens) and self.current_token.type == token_type:
             self.token_idx += 1
             self.current_token = self.tokens[self.token_idx]
+        elif(self.current_token.type == 'Comment Delimiter'):        
+            self.nextToken('Comment Delimiter')
+            self.nextToken('Comment')
+            self.nextToken('Linebreak')
         else:
             raise Exception(f"Syntax Error:{self.current_token.line_num}:Expected {token_type} at {self.current_token.value}")
 
@@ -21,7 +25,6 @@ class Parser:
             childNodes.append(literal)
         elif (self.current_token.type == 'Variable Identifier'):
             childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
-            print(self.current_token.value)
             self.nextToken('Variable Identifier')
         elif (expression := self.expression(infAr)):
             childNodes.append(expression)
@@ -91,6 +94,8 @@ class Parser:
             childNodes.append(infAnd)
         elif(infAr and (infOr := self.infOp('Infinite Or', True))):
             childNodes.append(infOr)
+        elif(maek := self.maek()):
+            childNodes.append(maek)
         else:
             return False
         
@@ -170,6 +175,28 @@ class Parser:
             childNodes.append(self.infOperands(childNodes, boolean))
         
         return ATNode('Infinite Operands', children_nodes = childNodes)
+
+    def maek(self):
+        childNodes = deque()
+        if self.current_token.type == 'Maek Keyword':
+            self.nextToken('Maek Keyword')
+            childNodes.append(ATNode('Maek Keyword'))
+        else:
+            return False
+
+        if(exprvar := self.exprvar(True)):
+            childNodes.append(exprvar)
+        else:
+            self.nextToken('Expression')
+
+        if self.current_token.type == 'A Keyword':
+            self.nextToken('A Keyword')
+            childNodes.append(ATNode('A Keyword'))
+        
+        childNodes.append(ATNode('Data Type', value = self.current_token.value))
+        self.nextToken('Data Type')
+
+        return ATNode('Maek', children_nodes = childNodes)
     # ------------------------LITERALS/EXPRESISON/VARIABLE------------------------
 
     # ------------------------I/O------------------------
@@ -210,7 +237,6 @@ class Parser:
         self.nextToken('Variable Identifier')
 
         return ATNode('Input Statement', children_nodes = childNodes)
-
     # ------------------------I/O------------------------
     
     # ------------------------ASSIGNMENT------------------------
@@ -261,6 +287,28 @@ class Parser:
             self.nextToken('Expression')
         
         return ATNode('Assignment Statement', children_nodes = childNodes)
+
+    def typecast(self):
+        childNodes = deque()
+
+        if(self.current_token.type == 'Variable Identifier'):
+            childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+            self.nextToken('Variable Identifier')
+        else:
+            return False
+        
+        if self.current_token.type == 'Typecast Keyword':
+            self.nextToken('Typecast Keyword')
+            childNodes.append(ATNode('Typecast Keyword'))
+        else:
+            self.token_idx -= 1
+            self.current_token = self.tokens[self.token_idx]
+            return False
+
+        childNodes.append(ATNode('Data Type', value = self.current_token.value))
+        self.nextToken('Data Type')
+
+        return ATNode('Typecast Statement', children_nodes = childNodes)
     # ------------------------ASSIGNMENT------------------------
 
     # ------------------------CONTROL------------------------
@@ -354,7 +402,6 @@ class Parser:
         else:
             self.nextToken('Literal')
         
-
         while(self.current_token.type != 'If-else End' and 
         self.current_token.type != 'Case Keyword' and
         self.current_token.type != 'Case Default Keyword'):
@@ -430,6 +477,15 @@ class Parser:
 
     # ------------------------CONTROL------------------------
 
+    # ------------------------MAIN------------------------
+    def multiComment(self):
+        self.nextToken('Multiline Comment Start')
+        
+        while(self.current_token.type != 'Multiline Comment End'):
+            self.nextToken('Comment')
+        
+        self.nextToken('Multiline Comment End')
+        
     def statement(self):
         childNodes = deque()
 
@@ -437,6 +493,8 @@ class Parser:
             childNodes.append(visible)
         elif(assignment := self.assignment()):
             childNodes.append(assignment)
+        elif(typecast := self.typecast()):
+            childNodes.append(typecast)
         elif(exprvar := self.exprvar(True)):
             childNodes.append(exprvar)
         elif(gimmeh := self.gimmeh()):
@@ -451,6 +509,12 @@ class Parser:
             childNodes.append(declaration)
         elif(if_else := self.ifElse()):
             childNodes.append(if_else)
+        elif(self.current_token.type == 'Multiline Comment Start'):
+            self.multiComment()
+
+        if(self.current_token.type == 'Comment Delimiter'):
+            self.nextToken('Comment Delimiter')
+            self.nextToken('Comment')
 
         self.nextToken('Linebreak')
         childNodes.append(ATNode('Linebreak'))
@@ -480,3 +544,4 @@ class Parser:
         treeNode.append(ATNode('Code End'))
 
         return ATNode('LOLProgram', children_nodes = treeNode)
+    # ------------------------MAIN------------------------
