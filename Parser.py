@@ -339,7 +339,6 @@ class Parser:
             childNodes.append(expression)
         
         self.nextToken('Linebreak')
-        childNodes.append(ATNode('Linebreak'))
 
         while(self.current_token.type != 'Loop End'):
             statement = self.statement()
@@ -370,7 +369,6 @@ class Parser:
             return False
         
         self.nextToken('Linebreak')
-        childNodes.append(ATNode('Linebreak'))
 
         case = self.case()
         childNodes.append(case)
@@ -420,13 +418,11 @@ class Parser:
             return False
         
         self.nextToken('Linebreak')
-        childNodes.append(ATNode('Linebreak'))
 
         self.nextToken('If Keyword')
         childNodes.append(ATNode('If Keyword'))
 
         self.nextToken('Linebreak')
-        childNodes.append(ATNode('Linebreak'))
 
         while(self.current_token.type != 'Else-if Keyword' and 
         self.current_token.type != 'Else Keyword' and 
@@ -443,7 +439,6 @@ class Parser:
             childNodes.append(ATNode('Else Keyword'))
 
             self.nextToken('Linebreak')
-            childNodes.append(ATNode('Linebreak'))
 
             while(self.current_token.type != 'If-else End'):
                 statement = self.statement()
@@ -465,7 +460,6 @@ class Parser:
             self.nextToken('Expression')
 
         self.nextToken('Linebreak')
-        childNodes.append(ATNode('Linebreak'))
 
         while(self.current_token.type != 'Else-if Keyword' and 
         self.current_token.type != 'Else Keyword' and 
@@ -517,7 +511,6 @@ class Parser:
             self.nextToken('Comment')
 
         self.nextToken('Linebreak')
-        childNodes.append(ATNode('Linebreak'))
         return ATNode('Statement', children_nodes = childNodes)
         
     def lolProgram(self):
@@ -532,7 +525,6 @@ class Parser:
             self.nextToken(self.current_token.type)
         
         self.nextToken('Linebreak')
-        treeNode.append(ATNode('Linebreak'))
 
         # Code Body
         while(self.current_token.type != 'Code End'):
