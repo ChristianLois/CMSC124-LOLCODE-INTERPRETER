@@ -45,7 +45,6 @@ def execute():
 
     for i in symbolTree.children_nodes:
         print(i.type)
-
     if isinstance(lexemes,str):         #catch if error
         messagebox.showinfo("Error",lexemes)
     else:

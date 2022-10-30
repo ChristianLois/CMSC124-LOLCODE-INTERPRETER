@@ -8,9 +8,12 @@ class Parser:
         self.current_token = self.tokens[self.token_idx]
     
     def nextToken(self, token_type):
-        if self.token_idx + 1 < len(self.tokens) and self.current_token.type == token_type:
-            self.token_idx += 1
-            self.current_token = self.tokens[self.token_idx]
+        if  self.current_token.type == token_type:
+            if self.token_idx + 1 < len(self.tokens):
+                self.token_idx += 1
+                self.current_token = self.tokens[self.token_idx]
+            else:
+                self.token_idx += 1
         elif(self.current_token.type == 'Comment Delimiter'):        
             self.nextToken('Comment Delimiter')
             self.nextToken('Comment')
@@ -340,8 +343,7 @@ class Parser:
         
         self.nextToken('Linebreak')
 
-        while(self.current_token.type != 'Loop End'):
-            statement = self.statement()
+        while(statement := self.statement()):
             childNodes.append(statement)
 
         self.nextToken('Loop End')
@@ -380,8 +382,7 @@ class Parser:
         if self.current_token.type == 'Case Default Keyword':
             self.nextToken('Case Default Keyword')
             childNodes.append(ATNode('Case Default Keyword'))
-            while(self.current_token.type != 'If-else End'):
-                statement = self.statement()
+            while(statement := self.statement()):
                 childNodes.append(statement)
         
         self.nextToken('If-else End')
@@ -400,10 +401,7 @@ class Parser:
         else:
             self.nextToken('Literal')
         
-        while(self.current_token.type != 'If-else End' and 
-        self.current_token.type != 'Case Keyword' and
-        self.current_token.type != 'Case Default Keyword'):
-            statement = self.statement()
+        while(statement := self.statement()):
             childNodes.append(statement)
         
         return ATNode('Case', children_nodes = childNodes)
@@ -424,10 +422,7 @@ class Parser:
 
         self.nextToken('Linebreak')
 
-        while(self.current_token.type != 'Else-if Keyword' and 
-        self.current_token.type != 'Else Keyword' and 
-        self.current_token.type != 'If-else End'):
-            statement = self.statement()
+        while(statement := self.statement()):
             childNodes.append(statement)
         
         while self.current_token.type == 'Else-if Keyword':
@@ -440,8 +435,7 @@ class Parser:
 
             self.nextToken('Linebreak')
 
-            while(self.current_token.type != 'If-else End'):
-                statement = self.statement()
+            while(statement := self.statement()):
                 childNodes.append(statement)
 
         self.nextToken('If-else End')
@@ -461,10 +455,7 @@ class Parser:
 
         self.nextToken('Linebreak')
 
-        while(self.current_token.type != 'Else-if Keyword' and 
-        self.current_token.type != 'Else Keyword' and 
-        self.current_token.type != 'If-else End'):
-            statement = self.statement()
+        while(statement := self.statement()):
             childNodes.append(statement)
         
         return ATNode('Else-if', children_nodes = childNodes)
@@ -505,7 +496,12 @@ class Parser:
             childNodes.append(if_else)
         elif(self.current_token.type == 'Multiline Comment Start'):
             self.multiComment()
-
+        else:
+            if(self.current_token.type == 'Comment Delimiter'):
+                self.nextToken('Comment Delimiter')
+                self.nextToken('Comment')
+            else:
+                return False
         if(self.current_token.type == 'Comment Delimiter'):
             self.nextToken('Comment Delimiter')
             self.nextToken('Comment')
@@ -516,10 +512,21 @@ class Parser:
     def lolProgram(self):
         treeNode = deque()
 
+        while(self.current_token.type != 'Code Start'):
+            if self.current_token == 'Comment Delimiter':
+                self.nextToken('Comment Delimiter')
+                self.nextToken('Comment')
+            elif(self.current_token.type == 'Multiline Comment Start'):
+                self.multiComment()
+            elif(self.current_token.type == 'Linebreak'):
+                self.nextToken('Linebreak')
+            else:
+                self.nextToken('Code Start')
+
         # HAI
         self.nextToken('Code Start')
         treeNode.append(ATNode('Code Start'))
-
+        
         # checks if the version exists
         if (self.current_token.type == 'Numbar Literal' or self.current_token.type == 'Numbr Literal'):
             self.nextToken(self.current_token.type)
@@ -527,13 +534,23 @@ class Parser:
         self.nextToken('Linebreak')
 
         # Code Body
-        while(self.current_token.type != 'Code End'):
-            statement = self.statement()
+        while(statement := self.statement()):
             treeNode.append(statement)
         
         # KTHXBYE
         self.nextToken('Code End')
         treeNode.append(ATNode('Code End'))
+
+        while(self.token_idx < len(self.tokens)):
+            if self.current_token == 'Comment Delimiter':
+                self.nextToken('Comment Delimiter')
+                self.nextToken('Comment')
+            elif(self.current_token.type == 'Multiline Comment Start'):
+                self.multiComment()
+            elif(self.current_token.type == 'Linebreak'):
+                self.nextToken('Linebreak')
+            else:
+                self.nextToken('End of File')
 
         return ATNode('LOLProgram', children_nodes = treeNode)
     # ------------------------MAIN------------------------
