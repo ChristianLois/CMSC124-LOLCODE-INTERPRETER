@@ -361,6 +361,8 @@ class Parser:
             self.nextToken('Break')
         else:
             return False
+        
+        return(ATNode('Break Statement', children_nodes = childNodes))
     
     def switch(self):
         childNodes = deque()
@@ -382,15 +384,17 @@ class Parser:
         if self.current_token.type == 'Case Default Keyword':
             self.nextToken('Case Default Keyword')
             childNodes.append(ATNode('Case Default Keyword'))
+            self.nextToken('Linebreak')
             while(statement := self.statement()):
                 childNodes.append(statement)
-        
+            
         self.nextToken('If-else End')
         childNodes.append(ATNode('If-else End'))
 
         return ATNode('Switch Statement', children_nodes = childNodes)
     
     def case(self):
+        
         childNodes = deque()
 
         self.nextToken('Case Keyword')
@@ -400,6 +404,8 @@ class Parser:
             childNodes.append(literal)
         else:
             self.nextToken('Literal')
+        
+        self.nextToken('Linebreak')
         
         while(statement := self.statement()):
             childNodes.append(statement)
@@ -423,7 +429,9 @@ class Parser:
         self.nextToken('Linebreak')
 
         while(statement := self.statement()):
+
             childNodes.append(statement)
+            
         
         while self.current_token.type == 'Else-if Keyword':
             mebbe = self.mebbe()
