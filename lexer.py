@@ -50,6 +50,7 @@ TOKENS = [
     (r"^WILE\s", "Condition Keyword"),
     (r"^IM OUTTA YR\s", "Loop End"),
     (r"^GTFO\s", "Break"),
+    (r"^IT\s", "Implicit Variable"),
     (r"^(WIN|FAIL)\s", "Troof Literal"),
     (r"-?[0-9]+\.[0-9]+\s", "Numbar Literal"),
     (r"-?[0-9]+\s", "Numbr Literal"),

@@ -269,8 +269,10 @@ class Parser:
 
     def assignment(self):
         childNodes = deque()
-
-        if(self.current_token.type == 'Variable Identifier'):
+        if(self.current_token.type == 'Implicit Variable'):
+            childNodes.append(ATNode('Implicit Variable'))
+            self.nextToken('Implicit Variable')
+        elif(self.current_token.type == 'Variable Identifier'):
             childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
             self.nextToken('Variable Identifier')
         else:
