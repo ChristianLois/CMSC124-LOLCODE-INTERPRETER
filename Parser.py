@@ -26,6 +26,9 @@ class Parser:
         childNodes = deque()
         if (literal := self.literal()):
             childNodes.append(literal)
+        elif(self.current_token.type == 'Implicit Variable'):
+            childNodes.append(ATNode('Implicit Variable'))
+            self.nextToken('Implicit Variable')
         elif (self.current_token.type == 'Variable Identifier'):
             childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
             self.nextToken('Variable Identifier')
