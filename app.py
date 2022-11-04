@@ -2,8 +2,11 @@ from tkinter import *
 from tkinter.filedialog import askopenfilename, asksaveasfilename      # for choosing file
 from tkinter import ttk                 #for tables of lexemes and symbols
 from tkinter import messagebox
+
 from Lexer import Lexer
 from Parser import Parser
+from SymbolAnalyzer import SymbolAnalyzer
+
 import tkinter.font as tkfont
 
 def openFile():        #for opening file
@@ -36,15 +39,22 @@ def execute():
     lex = Lexer(txt_edit.get("1.0",'end-1c'))
 
     lexemes = lex.tokenize()
-    
+
     lexemeTable.delete(*lexemeTable.get_children())     #reset lexeme table
+
+    symbolTree = None
 
     if (len(lexemes) > 0):
         parser = Parser(lexemes)
         symbolTree = parser.lolProgram()
 
-    # for i in symbolTree.children_nodes:
-    #     print(i.type)
+    for i in symbolTree.children_nodes:
+        print(i.type)
+    
+    if(symbolTree):
+        symbolAnalyer = SymbolAnalyzer(symbolTree)
+        codeExecution = symbolAnalyer.analyze()
+
     if isinstance(lexemes,str):         #catch if error
         messagebox.showinfo("Error",lexemes)
     else:

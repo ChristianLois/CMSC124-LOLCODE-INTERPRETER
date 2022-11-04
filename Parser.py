@@ -214,20 +214,22 @@ class Parser:
         else:
             return False
         
-        childNodes.append(self.printNodes(deque()))
+        childNodes.append(self.printNode())
 
+        while(self.current_token.type != 'Comment Delimiter' and self.current_token.type != 'Linebreak'):
+            print('Enter')
+            if(self.current_token.type == 'Operation Delimiter'):
+                self.nextToken('Operation Delimiter')
+            childNodes.append(self.printNode())
+            
         return ATNode('Output Statement', children_nodes = childNodes)
 
-    def printNodes(self, childNodes):
+    def printNode(self):
+        childNodes = deque()
         exprvar = self.exprvar(True)
         if(not exprvar):
             self.nextToken('Expression')
         childNodes.append(exprvar)
-
-        if(self.current_token.type == 'Operation Delimiter'):
-            self.nextToken('Operation Delimiter')
-        if(self.current_token.type != 'Comment Delimiter' and self.current_token.type != 'Linebreak'):
-            childNodes.append(self.printNodes(childNodes))
     
         return ATNode('Print Expressions', children_nodes = childNodes)
     
