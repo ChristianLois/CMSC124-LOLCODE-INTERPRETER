@@ -159,28 +159,19 @@ class Parser:
         else:
             self.nextToken('Expression')
         
-        operands = self.infOperands(deque(), boolean)
-        childNodes.append(operands)
+        while self.current_token.type == 'Operation Delimiter':
+            self.nextToken('Operation Delimiter')
+            if(boolean and (exprvar := self.exprvar(False))):
+                childNodes.append(exprvar)
+            elif(not boolean and (exprvar := self.exprvar(True))):
+                childNodes.append(exprvar)
+            else:
+                self.nextToken('Expression')
 
         if(boolean):
             self.nextToken('Infinite Bool End')
 
         return ATNode(operation, children_nodes = childNodes)
-        
-    def infOperands(self, childNodes, boolean):
-        self.nextToken('Operation Delimiter')
-
-        if(boolean and (exprvar := self.exprvar(False))):
-            childNodes.append(exprvar)
-        elif(not boolean and (exprvar := self.exprvar(True))):
-            childNodes.append(exprvar)
-        else:
-            self.nextToken('Expression')
-        
-        if(self.current_token.type == 'Operation Delimiter'):
-            childNodes.append(self.infOperands(childNodes, boolean))
-        
-        return ATNode('Infinite Operands', children_nodes = childNodes)
 
     def maek(self):
         childNodes = deque()

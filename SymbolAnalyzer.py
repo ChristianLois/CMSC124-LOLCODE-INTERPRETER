@@ -50,6 +50,7 @@ class SymbolAnalyzer:
             return self.evaluateExpression(expType.children_nodes[0])
     
     def evaluateExpression(self, expression):
+        print(expression.type)
         if (expression.type == 'Addition' or 
         expression.type == 'Subtraction' or
         expression.type == 'Multiplication' or
@@ -63,6 +64,9 @@ class SymbolAnalyzer:
         expression.type == 'Xor' or
         expression.type == 'Not'):
             return self.boolean(expression)
+        elif (expression.type == 'Infinite And' or
+        expression.type == 'Infinite Or'):
+            return self.infBoolean(expression)
     
     def arithmetic(self, expression):
         operands = expression.children_nodes
@@ -152,6 +156,35 @@ class SymbolAnalyzer:
         else:
             return Symbol('Troof Literal', 'FAIL')
 
+    def infBoolean(self, expression):
+        operations = list(expression.children_nodes)[2:]
+
+        res = self.getValue(expression.children_nodes[1])
+        if res.type != 'Troof Literal':
+            res = self.boolTypecast(res)
+        if res.value == 'WIN':
+            ans = True
+        else:
+            ans = False
+        for op in operations:
+            res = self.getValue(op)
+            if res.type != 'Troof Literal':
+                res = self.boolTypecast(res)
+            if res.value == 'WIN':
+                temp = True
+            else:
+                temp = False
+            if expression.type == 'Infinite And':
+                ans = ans and temp
+            else:
+                ans = ans or temp
+        
+        if ans == True:
+            return Symbol('Troof Literal', 'WIN')
+        else:
+            return Symbol('Troof Literal', 'FAIL')
+
+        
     def boolTypecast(self, expression):
         if expression.type == 'Yarn Literal':
             if expression.value == '':
@@ -159,7 +192,7 @@ class SymbolAnalyzer:
             else:
                 return Symbol('Troof Literal', 'WIN')
         elif expression.type == 'Numbr Literal' or expression.type == 'Numbar Literal':
-            if int(expression.value) == 0:
+            if float(expression.value) == 0:
                 return Symbol('Troof Literal', 'FAIL')
             else:
                 return Symbol('Troof Literal', 'WIN')
@@ -167,7 +200,7 @@ class SymbolAnalyzer:
             return Symbol('Troof Literal', 'FAIL')
         else:
             raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to troof")
-        
+    
     def numTypecast(self, expression):
         if expression.type == 'Yarn Literal':
             if re.match(r"-?[0-9]+\.[0-9]+$", expression.value):
