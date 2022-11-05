@@ -7,7 +7,7 @@ import re
 class SymbolAnalyzer:
     def __init__(self, atnode_tree):
         self.atnode_tree = atnode_tree
-        self.symbol_table = {'IT': Symbol('Noob')}
+        self.symbol_table = {'IT': Symbol('Noob', value = None)}
         self.line_number = 1
 
     def analyze(self):
@@ -42,7 +42,7 @@ class SymbolAnalyzer:
                 return Symbol('Yarn Literal', litType.children_nodes[0].value)
             else:
                 return Symbol(litType.type, litType.value)
-        elif expType.type == 'Variable Identifier':
+        elif expType.type == 'Variable Identifier' or expType.type == 'Implicit Variable':
             variable = expType.value
             self.lookup(variable)
             return self.symbol_table[variable]
@@ -58,6 +58,11 @@ class SymbolAnalyzer:
         expression.type == 'Min' or
         expression.type == 'Max'):
             return self.arithmetic(expression)
+        elif (expression.type == 'And' or
+        expression.type == 'Or' or
+        expression.type == 'Xor' or
+        expression.type == 'Not'):
+            return self.boolean(expression)
     
     def arithmetic(self, expression):
         operands = expression.children_nodes
@@ -102,21 +107,80 @@ class SymbolAnalyzer:
             return Symbol('Numbr Literal', ans)
         else:
             return Symbol('Numbar Literal', ans)
+
+    def boolean(self, expression):
+        operands = expression.children_nodes
+        op1Exp = self.getValue(operands[1])
+
+        if op1Exp.type == 'Troof Literal':
+            if op1Exp.value == 'WIN':
+                op1 = True
+            else:
+                op1 = False
+        else:
+            temp = self.boolTypecast(op1Exp)
+            if temp.value == 'WIN':
+                op1 = True
+            else:
+                op1 = False
         
-    
+        if expression.type != 'Not':
+            op2Exp = self.getValue(operands[2])
+            if op2Exp.type == 'Troof Literal':
+                if op2Exp.value == 'WIN':
+                    op2 = True
+                else:
+                    op2 = False
+            else:
+                temp = self.boolTypecast(op2Exp)
+                if temp.value == 'WIN':
+                    op2 = True
+                else:
+                    op2 = False
+        
+        if expression.type == 'And':
+            ans = op1 and op2
+        elif expression.type == 'Or':
+            ans = op1 or op2
+        elif expression.type == 'Not':
+            ans = not op1
+        elif expression.type == 'Xor':
+            ans = op1 ^ op2
+        
+        if ans == True:
+            return Symbol('Troof Literal', 'WIN')
+        else:
+            return Symbol('Troof Literal', 'FAIL')
+
+    def boolTypecast(self, expression):
+        if expression.type == 'Yarn Literal':
+            if expression.value == '':
+                return Symbol('Troof Literal', 'FAIL')
+            else:
+                return Symbol('Troof Literal', 'WIN')
+        elif expression.type == 'Numbr Literal' or expression.type == 'Numbar Literal':
+            if int(expression.value) == 0:
+                return Symbol('Troof Literal', 'FAIL')
+            else:
+                return Symbol('Troof Literal', 'WIN')
+        elif expression.type == 'Noob':
+            return Symbol('Troof Literal', 'FAIL')
+        else:
+            raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to troof")
+        
     def numTypecast(self, expression):
         if expression.type == 'Yarn Literal':
             if re.match(r"-?[0-9]+\.[0-9]+$", expression.value):
                 return Symbol('Numbar Literal', float(expression.value))
             elif re.match(r"-?[0-9]+$", expression.value):
                 return Symbol('Numbr Literal', int(expression.value))
+            else:
+                raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to numerical data type")
         elif expression.type == 'Troof Literal':
             if expression.value == 'WIN':
                 return Symbol('Numbr Literal', 1)
             else:
                 return Symbol('Numbr Literal', 0)
-        elif expression.type == 'Noob':
-            return Symbol('Numbr Literal', 0)
         else:
             raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to numerical data type")
 
@@ -125,8 +189,6 @@ class SymbolAnalyzer:
             return Symbol('Yarn Literal', str(expression.value))
         elif expression.type == 'Numbar Literal':
             return Symbol('Yarn Literal', str(math.floor(expression.value*100)/100))
-        elif expression.type == 'Noob':
-            return Symbol('Yarn Literal', '')
         else:
             raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to yarn")
 
