@@ -73,27 +73,25 @@ class SymbolAnalyzer:
         elif (expression.type == 'Equality Check' or
         expression.type == 'Inequality Check'):
             return self.comparison(expression)
+        elif (expression.type == 'Concatenate'):
+            return self.smoosh(expression)
     
     def arithmetic(self, expression):
         operands = expression.children_nodes
         op1Exp = self.getValue(operands[1])
         op2Exp = self.getValue(operands[2])
 
-        if op1Exp.type == 'Numbr Literal':
-            op1 = int(op1Exp.value)
-        elif op1Exp.type == 'Numbar Literal':
-            op1 = float(op1Exp.value)
-        else:
+        if op1Exp.type != 'Numbr Literal' and op1Exp.type != 'Numbar Literal':
             temp = self.numTypecast(op1Exp)
             op1 = temp.value
-        
-        if op2Exp.type == 'Numbr Literal':
-            op2 = int(op2Exp.value)
-        elif op2Exp.type == 'Numbar Literal':
-            op2 = float(op2Exp.value)
         else:
+            op1 = op1Exp.value
+        
+        if op2Exp.type != 'Numbr Literal' and op2Exp.type != 'Numbar Literal':
             temp = self.numTypecast(op2Exp)
             op2 = temp.value
+        else:
+            op2 = op2Exp.value
 
         if expression.type == 'Addition':
             ans = op1 + op2
@@ -190,6 +188,18 @@ class SymbolAnalyzer:
         else:
             return Symbol('Troof Literal', 'FAIL')
 
+    def smoosh(self, expression):
+        operations = list(expression.children_nodes)[1:]
+
+        toConcat = ''
+        for op in operations:
+            temp = self.getValue(op)
+            if temp.type != 'Yarn Literal':
+                temp = self.strTypecast(temp)
+            toConcat += temp.value
+        
+        return Symbol('Yarn Literal', value = toConcat)
+
     def comparison(self, expression):
         operands = expression.children_nodes
         op1Exp = self.getValue(operands[1])
@@ -253,6 +263,8 @@ class SymbolAnalyzer:
             return Symbol('Yarn Literal', str(expression.value))
         elif expression.type == 'Numbar Literal':
             return Symbol('Yarn Literal', str(math.floor(expression.value*100)/100))
+        elif expression.type == 'Troof Literal':
+            return Symbol('Yarn Literal', expression.value)
         else:
             raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to yarn")
 
