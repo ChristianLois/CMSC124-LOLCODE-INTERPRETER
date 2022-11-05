@@ -170,6 +170,8 @@ class Parser:
 
         if(boolean):
             self.nextToken('Infinite Bool End')
+        elif(self.current_token.type == 'Infinite Bool End'):
+            self.nextToken('Infinite Bool End')
 
         return ATNode(operation, children_nodes = childNodes)
 

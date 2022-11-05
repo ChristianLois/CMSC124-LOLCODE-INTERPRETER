@@ -40,6 +40,10 @@ class SymbolAnalyzer:
             litType = expType.children_nodes[0]
             if litType.type == 'Yarn Literal':
                 return Symbol('Yarn Literal', litType.children_nodes[0].value)
+            elif litType.type == 'Numbr Literal':
+                return Symbol(litType.type, int(litType.value))
+            elif litType.type == 'Numbar Literal':
+                return Symbol(litType.type, float(litType.value))
             else:
                 return Symbol(litType.type, litType.value)
         elif expType.type == 'Variable Identifier' or expType.type == 'Implicit Variable':
@@ -50,7 +54,6 @@ class SymbolAnalyzer:
             return self.evaluateExpression(expType.children_nodes[0])
     
     def evaluateExpression(self, expression):
-        print(expression.type)
         if (expression.type == 'Addition' or 
         expression.type == 'Subtraction' or
         expression.type == 'Multiplication' or
@@ -67,6 +70,9 @@ class SymbolAnalyzer:
         elif (expression.type == 'Infinite And' or
         expression.type == 'Infinite Or'):
             return self.infBoolean(expression)
+        elif (expression.type == 'Equality Check' or
+        expression.type == 'Inequality Check'):
+            return self.comparison(expression)
     
     def arithmetic(self, expression):
         operands = expression.children_nodes
@@ -184,6 +190,31 @@ class SymbolAnalyzer:
         else:
             return Symbol('Troof Literal', 'FAIL')
 
+    def comparison(self, expression):
+        operands = expression.children_nodes
+        op1Exp = self.getValue(operands[1])
+        op2Exp = self.getValue(operands[2])
+
+        if op1Exp.type == 'Troof Literal':
+            op1 = True
+        else:
+            op1 = op1Exp.value
+        
+        if op2Exp.type == 'Troof Literal':
+            op2 = True
+        else:
+            op2 = op2Exp.value
+
+        if expression.type == 'Equality Check':
+            ans = op1 == op2
+        elif expression.type == 'Inequality Check':
+            ans = op1 != op2
+
+        if ans == True:
+            return Symbol('Troof Literal', 'WIN')
+        else:
+            return Symbol('Troof Literal', 'FAIL')
+        
         
     def boolTypecast(self, expression):
         if expression.type == 'Yarn Literal':
