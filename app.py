@@ -48,8 +48,8 @@ def execute():
         parser = Parser(lexemes)
         symbolTree = parser.lolProgram()
 
-    for i in symbolTree.children_nodes:
-        print(i.type)
+    # for i in symbolTree.children_nodes:
+    #     print(i.type)
     
     if(symbolTree):
         symbolAnalyer = SymbolAnalyzer(symbolTree)

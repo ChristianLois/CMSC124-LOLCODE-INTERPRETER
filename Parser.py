@@ -210,11 +210,13 @@ class Parser:
         childNodes.append(self.printNode())
 
         while(self.current_token.type != 'Comment Delimiter' and self.current_token.type != 'Linebreak'):
-            print('Enter')
             if(self.current_token.type == 'Operation Delimiter'):
                 self.nextToken('Operation Delimiter')
             childNodes.append(self.printNode())
-            
+        
+        if self.current_token.type == 'Newline Supress':
+            self.nextToken('Newline Supress')
+            childNodes.append(ATNode('Newline Supress'))
         return ATNode('Output Statement', children_nodes = childNodes)
 
     def printNode(self):
@@ -472,12 +474,18 @@ class Parser:
 
     # ------------------------MAIN------------------------
     def multiComment(self):
+        childNodes = deque()
+
         self.nextToken('Multiline Comment Start')
+        childNodes.append(ATNode('Multiline Comment Start'))
         
         while(self.current_token.type != 'Multiline Comment End'):
             self.nextToken('Comment')
+            childNodes.append(ATNode('Comment'))
         
         self.nextToken('Multiline Comment End')
+        childNodes.append(ATNode('Multiline Comment End'))
+        return ATNode('Multiline Comment', children_nodes = childNodes)
         
     def statement(self):
         childNodes = deque()
@@ -503,11 +511,17 @@ class Parser:
         elif(if_else := self.ifElse()):
             childNodes.append(if_else)
         elif(self.current_token.type == 'Multiline Comment Start'):
-            self.multiComment()
+            childNodes.append(self.multiComment())
         else:
             if(self.current_token.type == 'Comment Delimiter'):
                 self.nextToken('Comment Delimiter')
+                childNodes.append(ATNode('Comment Delimiter'))
                 self.nextToken('Comment')
+                childNodes.append(ATNode('Comment'))
+            elif(self.current_token.type == 'Linebreak'):
+                self.nextToken('Linebreak')
+                childNodes.append(ATNode('Linebreak'))
+                return ATNode('Ignore')
             else:
                 return False
         if(self.current_token.type == 'Comment Delimiter'):
@@ -523,9 +537,11 @@ class Parser:
         while(self.current_token.type != 'Code Start'):
             if self.current_token == 'Comment Delimiter':
                 self.nextToken('Comment Delimiter')
+                treeNode.append(ATNode('Comment Delimiter'))
                 self.nextToken('Comment')
+                treeNode.append(ATNode('Comment'))
             elif(self.current_token.type == 'Multiline Comment Start'):
-                self.multiComment()
+                treeNode.append(self.multiComment())
             elif(self.current_token.type == 'Linebreak'):
                 self.nextToken('Linebreak')
             else:
@@ -552,9 +568,11 @@ class Parser:
         while(self.token_idx < len(self.tokens)):
             if self.current_token == 'Comment Delimiter':
                 self.nextToken('Comment Delimiter')
+                treeNode.append(ATNode('Comment Delimiter'))
                 self.nextToken('Comment')
+                treeNode.append(ATNode('Comment'))
             elif(self.current_token.type == 'Multiline Comment Start'):
-                self.multiComment()
+                treeNode.append(self.multiComment())
             elif(self.current_token.type == 'Linebreak'):
                 self.nextToken('Linebreak')
             else:

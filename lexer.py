@@ -71,51 +71,54 @@ class Lexer:
         for line in lines:
             line = line.strip()+'\n'
             hasToken = False
-            while(line != '\n' and line !=''):
-                hasToken = True
-                if(in_comment):
-                    tldr_check = re.search(r"\sTLDR\s", line)
-                    if(line[:4] == 'TLDR'):
-                        token_value = matched_token.group(0)
-                        tokens.append(Token('Multiline Comment End', line[:4], line_no))
-                        line = line[4:].lstrip()
-                        in_comment = False
-                    elif(tldr_check):
-                        start = tldr_check.span()[0]
-                        tokens.append(Token('Comment', line[:start+1].strip(), line_no))
-                        line = line[start+1:]
-                    else:
-                        tokens.append(Token('Comment', line[:-1], line_no))
-                        line = line[len(line):]
-                    continue
-                for token in TOKENS:       
-                    pattern, type = token
-                    matched_token = re.match(pattern, line)
-                    if(matched_token):
-                        if type == 'Comment Delimiter':
-                            token_value = matched_token.group(0)
-                            tokens.append(Token(type, token_value.strip(), line_no))
-                            line = line[matched_token.end():].lstrip()
-                            tokens.append(Token('Comment', line[:-1].strip(), line_no))
-                            line = line[len(line):]
-                            break
-                        elif type == 'Multiline Comment Start':
-                            token_value = matched_token.group(0)
-                            tokens.append(Token(type, token_value.strip(), line_no))
-                            in_comment = True  
-                        elif type == 'Yarn Literal':
-                            temp_token = matched_token.group(0)
-                            tokens.append(Token('String Delimiter', '"', line_no))
-                            tokens.append(Token(type, temp_token[1:-2], line_no))
-                            tokens.append(Token('String Delimiter', '"', line_no))
-                        else:
-                            token_value = matched_token.group(0)
-                            tokens.append(Token(type, token_value.strip(), line_no))
-                        line = line[matched_token.end():].lstrip()
-                        break
-                if(not matched_token and not in_comment):
-                    raise Exception(f"Error in line number {line_no}: Invalid token {line}")
-            if(hasToken and not in_comment):
+            if line == '\n':
                 tokens.append(Token('Linebreak', '\\n', line_no))
+            else:
+                while(line !=''):
+                    hasToken = True
+                    if(in_comment):
+                        tldr_check = re.search(r"\sTLDR\s", line)
+                        if(line[:4] == 'TLDR'):
+                            token_value = matched_token.group(0)
+                            tokens.append(Token('Multiline Comment End', line[:4], line_no))
+                            line = line[4:].lstrip()
+                            in_comment = False
+                        elif(tldr_check):
+                            start = tldr_check.span()[0]
+                            tokens.append(Token('Comment', line[:start+1].strip(), line_no))
+                            line = line[start+1:]
+                        else:
+                            tokens.append(Token('Comment', line[:-1], line_no))
+                            line = line[len(line):]
+                        continue
+                    for token in TOKENS:       
+                        pattern, type = token
+                        matched_token = re.match(pattern, line)
+                        if(matched_token):
+                            if type == 'Comment Delimiter':
+                                token_value = matched_token.group(0)
+                                tokens.append(Token(type, token_value.strip(), line_no))
+                                line = line[matched_token.end():].lstrip()
+                                tokens.append(Token('Comment', line[:-1].strip(), line_no))
+                                line = line[len(line):]
+                                break
+                            elif type == 'Multiline Comment Start':
+                                token_value = matched_token.group(0)
+                                tokens.append(Token(type, token_value.strip(), line_no))
+                                in_comment = True  
+                            elif type == 'Yarn Literal':
+                                temp_token = matched_token.group(0)
+                                tokens.append(Token('String Delimiter', '"', line_no))
+                                tokens.append(Token(type, temp_token[1:-2], line_no))
+                                tokens.append(Token('String Delimiter', '"', line_no))
+                            else:
+                                token_value = matched_token.group(0)
+                                tokens.append(Token(type, token_value.strip(), line_no))
+                            line = line[matched_token.end():].lstrip()
+                            break
+                    if(not matched_token and not in_comment):
+                        raise Exception(f"Error in line number {line_no}: Invalid token {line}")
+                if(hasToken and not in_comment):
+                    tokens.append(Token('Linebreak', '\\n', line_no))
             line_no += 1
         return tokens  

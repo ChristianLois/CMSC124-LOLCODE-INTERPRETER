@@ -22,7 +22,13 @@ class SymbolAnalyzer:
         statement = node[0]
         if statement.type == 'Output Statement':
             self.visible(statement)
-    
+        elif statement.type == 'Declaration Statement':
+            self.declaration(statement)
+        elif statement.type == 'Input Statement':
+            self.gimmeh(statement)
+        elif statement.type == 'Assignment Statement':
+            self.assignment(statement)
+
     def visible(self, statement):
         printNodes = list(statement.children_nodes)[1:]
         toPrint = ''
@@ -34,6 +40,28 @@ class SymbolAnalyzer:
             toPrint += expValue.value
         print(toPrint)
 
+    def declaration(self, statement):
+        variable = statement.children_nodes[1].value
+
+        if len(statement.children_nodes) > 2:
+            value = self.getValue(statement.children_nodes[3])
+            self.symbol_table[variable] = Symbol(value.type, value.value)
+        else:
+            self.symbol_table[variable] = Symbol('Noob')
+    
+    def gimmeh(self, statement):
+        variable = statement.children_nodes[1].value
+        self.lookup(variable)
+        temp = input()
+        self.symbol_table[variable] = Symbol('Yarn Literal', temp)
+
+    def assignment(self, statement):
+        variable = statement.children_nodes[0].value
+        self.lookup(variable)
+        value = self.getValue(statement.children_nodes[2])
+        self.symbol_table[variable] = value
+        
+    # --------------------Getting Values of expresison/literal/variable-------------------
     def getValue(self, expression):
         expType = expression.children_nodes[0]
         if expType.type == 'Literal':
@@ -224,8 +252,9 @@ class SymbolAnalyzer:
             return Symbol('Troof Literal', 'WIN')
         else:
             return Symbol('Troof Literal', 'FAIL')
-        
-        
+    # --------------------Getting Values of expresison/literal/variable-------------------
+
+    # --------------------Implicit typecasting-------------------
     def boolTypecast(self, expression):
         if expression.type == 'Yarn Literal':
             if expression.value == '':
@@ -243,6 +272,7 @@ class SymbolAnalyzer:
             raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to troof")
     
     def numTypecast(self, expression):
+        print(expression.value)
         if expression.type == 'Yarn Literal':
             if re.match(r"-?[0-9]+\.[0-9]+$", expression.value):
                 return Symbol('Numbar Literal', float(expression.value))
@@ -267,10 +297,13 @@ class SymbolAnalyzer:
             return Symbol('Yarn Literal', expression.value)
         else:
             raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to yarn")
+    # --------------------Implicit typecasting-------------------
 
+    # --------------------Utils-------------------
     def lookup(self, key):
         if key in self.symbol_table.keys():
             return
         
         raise Exception(f"Semantic Error:{self.line_number}: Variable \'{key}\' not declared")
+    # --------------------Utils-------------------
             
