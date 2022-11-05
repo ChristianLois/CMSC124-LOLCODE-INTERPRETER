@@ -190,7 +190,6 @@ class Parser:
 
         if self.current_token.type == 'A Keyword':
             self.nextToken('A Keyword')
-            childNodes.append(ATNode('A Keyword'))
         
         childNodes.append(ATNode('Data Type', value = self.current_token.value))
         self.nextToken('Data Type')

@@ -1,4 +1,4 @@
-# TASK: ADD THE BOOLEAN EXPRESSION
+# TASK: add maek
 
 from Symbol import Symbol
 import math
@@ -28,6 +28,8 @@ class SymbolAnalyzer:
             self.gimmeh(statement)
         elif statement.type == 'Assignment Statement':
             self.assignment(statement)
+        elif statement.type == 'Exprvar':
+            self.expression(statement)
 
     def visible(self, statement):
         printNodes = list(statement.children_nodes)[1:]
@@ -60,7 +62,10 @@ class SymbolAnalyzer:
         self.lookup(variable)
         value = self.getValue(statement.children_nodes[2])
         self.symbol_table[variable] = value
-        
+    
+    def expression(self, statement):
+        value = self.getValue(statement)
+        self.symbol_table['IT'] = value
     # --------------------Getting Values of expresison/literal/variable-------------------
     def getValue(self, expression):
         expType = expression.children_nodes[0]
@@ -103,6 +108,8 @@ class SymbolAnalyzer:
             return self.comparison(expression)
         elif (expression.type == 'Concatenate'):
             return self.smoosh(expression)
+        elif (expression.type == 'Maek'):
+            return self.maek(expression)
     
     def arithmetic(self, expression):
         operands = expression.children_nodes
@@ -252,6 +259,12 @@ class SymbolAnalyzer:
             return Symbol('Troof Literal', 'WIN')
         else:
             return Symbol('Troof Literal', 'FAIL')
+    
+    def maek(self, expression):
+        value = self.getValue(expression.children_nodes[1])
+        dataType = expression.children_nodes[2].value
+        return self.typecast(value, dataType)
+        
     # --------------------Getting Values of expresison/literal/variable-------------------
 
     # --------------------Implicit typecasting-------------------
@@ -269,12 +282,11 @@ class SymbolAnalyzer:
         elif expression.type == 'Noob':
             return Symbol('Troof Literal', 'FAIL')
         else:
-            raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to troof")
+            raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to TROOF")
     
     def numTypecast(self, expression):
-        print(expression.value)
         if expression.type == 'Yarn Literal':
-            if re.match(r"-?[0-9]+\.[0-9]+$", expression.value):
+            if re.match(r"-?[0-9]+\.[0-9]+$", expression.value) or re.match(r"-?[0-9]+$", expression.value):
                 return Symbol('Numbar Literal', float(expression.value))
             elif re.match(r"-?[0-9]+$", expression.value):
                 return Symbol('Numbr Literal', int(expression.value))
@@ -296,8 +308,75 @@ class SymbolAnalyzer:
         elif expression.type == 'Troof Literal':
             return Symbol('Yarn Literal', expression.value)
         else:
-            raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to yarn")
+            raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to YARN")
     # --------------------Implicit typecasting-------------------
+
+    # --------------------Explicit typecasting-------------------
+    def typecast(self, symbol, dataType):
+        if symbol.type == 'Noob':
+            if dataType == 'NUMBR':
+                return Symbol('Numbr Literal', 0)
+            elif dataType == 'NUMBAR':
+                return Symbol('Numbar Literal', 0.0)
+            elif dataType == 'YARN':
+                return Symbol('Yarn Literal', '')
+            elif dataType == 'TROOF':
+                return Symbol('Troof Literal', 'FAIL')
+            elif dataType == 'NOOB':
+                return symbol
+        elif symbol.type == 'Troof Literal':
+            if dataType == 'NUMBR':
+                temp = 1 if symbol.value == 'WIN' else 0
+                return Symbol('Numbr Literal', temp)
+            elif dataType == 'NUMBAR':
+                temp = 1.0 if symbol.value == 'WIN' else 0.0
+                return Symbol('Numbar Literal', temp)
+            elif dataType == 'YARN':
+                return Symbol('Yarn Literal', symbol.value)
+            elif dataType == 'TROOF':
+                return symbol
+            else:
+                raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+        elif symbol.type == 'Numbar Literal':
+            if dataType == 'NUMBR':
+                return Symbol('Numbr Literal', int(symbol.value))
+            elif dataType == 'YARN':
+                return Symbol('Yarn Literal', str(math.floor(symbol.value*100)/100))
+            elif dataType == 'TROOF':
+                temp = 'WIN' if symbol.value != 0 else 'FAIL'
+                return Symbol('Troof Literal', temp)
+            elif dataType == 'NUMBAR':
+                return symbol
+            else:
+                raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+        elif symbol.type == 'Numbr Literal':
+            if dataType == 'NUMBAR':
+                return Symbol('Numbar Literal', float(symbol.value))
+            elif dataType == 'YARN':
+                return Symbol('Yarn Literal', str(symbol.value))
+            elif dataType == 'TROOF':
+                temp = 'WIN' if symbol.value != 0 else 'FAIL'
+                return Symbol('Troof Literal', temp)
+            elif dataType == 'NUMBR':
+                return symbol
+            else:
+                raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+        elif symbol.type == 'Yarn Literal':
+            if dataType == 'NUMBAR':
+                if re.match(r"-?[0-9]+\.[0-9]+$", symbol.value) or re.match(r"-?[0-9]+$", symbol.value):
+                    return Symbol('Numbar Literal', float(symbol.value))
+                else:
+                    raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+            elif dataType == 'NUMBR':
+                if re.match(r"-?[0-9]+$", symbol.value):
+                    return Symbol('Numbr Literal', int(symbol.value))
+                else:
+                    raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+            elif dataType == 'YARN':
+                return symbol
+            else:
+                raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+    # --------------------Explicit typecasting-------------------
 
     # --------------------Utils-------------------
     def lookup(self, key):
