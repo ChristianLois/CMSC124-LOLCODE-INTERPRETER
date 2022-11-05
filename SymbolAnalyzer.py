@@ -1,5 +1,3 @@
-# TASK: add maek
-
 from Symbol import Symbol
 import math
 import re
@@ -30,6 +28,8 @@ class SymbolAnalyzer:
             self.assignment(statement)
         elif statement.type == 'Exprvar':
             self.expression(statement)
+        elif statement.type == 'Typecast Statement':
+            self.cast(statement)
 
     def visible(self, statement):
         printNodes = list(statement.children_nodes)[1:]
@@ -66,6 +66,16 @@ class SymbolAnalyzer:
     def expression(self, statement):
         value = self.getValue(statement)
         self.symbol_table['IT'] = value
+
+    def cast(self, statement):
+        variable = statement.children_nodes[0].value
+        self.lookup(variable)
+        value = self.symbol_table[variable]
+        dataType = statement.children_nodes[2].value
+        newValue = self.typecast(value, dataType)
+
+        self.symbol_table[variable] = newValue
+
     # --------------------Getting Values of expresison/literal/variable-------------------
     def getValue(self, expression):
         expType = expression.children_nodes[0]
@@ -264,7 +274,6 @@ class SymbolAnalyzer:
         value = self.getValue(expression.children_nodes[1])
         dataType = expression.children_nodes[2].value
         return self.typecast(value, dataType)
-        
     # --------------------Getting Values of expresison/literal/variable-------------------
 
     # --------------------Implicit typecasting-------------------
