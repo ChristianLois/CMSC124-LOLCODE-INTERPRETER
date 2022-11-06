@@ -30,9 +30,6 @@ class SymbolAnalyzer:
             self.gimmeh(statement)
         elif statement.type == 'Declaration Statement':
             self.declaration(statement)
-        
-        
-        
 
     def visible(self, statement):
         printNodes = list(statement.children_nodes)[1:]
@@ -143,6 +140,7 @@ class SymbolAnalyzer:
 
         if expression.type == 'Addition':
             ans = op1 + op2
+            print(op1,op2,ans)
         elif expression.type == 'Subtraction':
             ans = op1 - op2
         elif expression.type == 'Multiplication':
@@ -298,7 +296,7 @@ class SymbolAnalyzer:
     
     def numTypecast(self, expression):
         if expression.type == 'Yarn Literal':
-            if re.match(r"-?[0-9]+\.[0-9]+$", expression.value) or re.match(r"-?[0-9]+$", expression.value):
+            if re.match(r"-?[0-9]+\.[0-9]+$", expression.value):
                 return Symbol('Numbar Literal', float(expression.value))
             elif re.match(r"-?[0-9]+$", expression.value):
                 return Symbol('Numbr Literal', int(expression.value))

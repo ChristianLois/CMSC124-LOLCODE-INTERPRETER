@@ -51,9 +51,9 @@ def execute():
     # for i in symbolTree.children_nodes:
     #     print(i.type)
     
-    # if(symbolTree):
-    #     symbolAnalyer = SymbolAnalyzer(symbolTree)
-    #     codeExecution = symbolAnalyer.analyze()
+    if(symbolTree):
+        symbolAnalyer = SymbolAnalyzer(symbolTree)
+        codeExecution = symbolAnalyer.analyze()
 
     if isinstance(lexemes,str):         #catch if error
         messagebox.showinfo("Error",lexemes)
