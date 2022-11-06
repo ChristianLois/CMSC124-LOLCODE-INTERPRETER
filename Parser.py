@@ -347,7 +347,7 @@ class Parser:
         
         self.nextToken('Linebreak')
 
-        while(statement := self.statement()):
+        while(statement := self.statement(inProgBlock = True)):
             childNodes.append(statement)
 
         self.nextToken('Loop End')
@@ -389,7 +389,7 @@ class Parser:
             self.nextToken('Case Default Keyword')
             childNodes.append(ATNode('Case Default Keyword'))
             self.nextToken('Linebreak')
-            while(statement := self.statement()):
+            while(statement := self.statement(inProgBlock = True)):
                 childNodes.append(statement)
             
         self.nextToken('If-else End')
@@ -411,7 +411,7 @@ class Parser:
         
         self.nextToken('Linebreak')
         
-        while(statement := self.statement()):
+        while(statement := self.statement(inProgBlock = True)):
             childNodes.append(statement)
         
         return ATNode('Case', children_nodes = childNodes)
@@ -432,7 +432,7 @@ class Parser:
 
         self.nextToken('Linebreak')
 
-        while(statement := self.statement()):
+        while(statement := self.statement(inProgBlock = True)):
 
             childNodes.append(statement)
             
@@ -447,7 +447,7 @@ class Parser:
 
             self.nextToken('Linebreak')
 
-            while(statement := self.statement()):
+            while(statement := self.statement(inProgBlock = True)):
                 childNodes.append(statement)
 
         self.nextToken('If-else End')
@@ -467,7 +467,7 @@ class Parser:
 
         self.nextToken('Linebreak')
 
-        while(statement := self.statement()):
+        while(statement := self.statement(inProgBlock = True)):
             childNodes.append(statement)
         
         return ATNode('Else-if', children_nodes = childNodes)
@@ -489,7 +489,7 @@ class Parser:
         childNodes.append(ATNode('Multiline Comment End'))
         return ATNode('Multiline Comment', children_nodes = childNodes)
         
-    def statement(self):
+    def statement(self, inProgBlock = False):
         childNodes = deque()
 
         if(visible := self.visible()):
@@ -508,7 +508,7 @@ class Parser:
             childNodes.append(gtfo)
         elif(switch := self.switch()):
             childNodes.append(switch)
-        elif(declaration := self.declaration()):
+        elif(not inProgBlock and (declaration := self.declaration())):
             childNodes.append(declaration)
         elif(if_else := self.ifElse()):
             childNodes.append(if_else)

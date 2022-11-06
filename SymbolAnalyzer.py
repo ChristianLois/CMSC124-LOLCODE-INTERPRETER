@@ -20,16 +20,19 @@ class SymbolAnalyzer:
         statement = node[0]
         if statement.type == 'Output Statement':
             self.visible(statement)
-        elif statement.type == 'Declaration Statement':
-            self.declaration(statement)
-        elif statement.type == 'Input Statement':
-            self.gimmeh(statement)
         elif statement.type == 'Assignment Statement':
             self.assignment(statement)
-        elif statement.type == 'Exprvar':
-            self.expression(statement)
         elif statement.type == 'Typecast Statement':
             self.cast(statement)
+        elif statement.type == 'Exprvar':
+            self.expression(statement)
+        elif statement.type == 'Input Statement':
+            self.gimmeh(statement)
+        elif statement.type == 'Declaration Statement':
+            self.declaration(statement)
+        
+        
+        
 
     def visible(self, statement):
         printNodes = list(statement.children_nodes)[1:]
