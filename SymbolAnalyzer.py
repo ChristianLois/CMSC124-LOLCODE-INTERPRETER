@@ -36,14 +36,15 @@ class SymbolAnalyzer:
             self.switch(statement)
         elif statement.type == 'Declaration Statement':
             self.declaration(statement)
-            
+        elif statement.type == 'If-else Statement':
+            self.ifElse(statement)   
 
     def visible(self, statement):
         printNodes = list(statement.children_nodes)[1:]
         toPrint = ''
         for i in printNodes:
             expression = i.children_nodes[0]
-            expValue = self.getValue(expression)
+            expValue = self.getValue(expression.children_nodes[0])
             if expValue.type != 'Yarn Literal':
                 expValue = self.strTypecast(expValue)
             toPrint += expValue.value
@@ -53,7 +54,7 @@ class SymbolAnalyzer:
         variable = statement.children_nodes[1].value
 
         if len(statement.children_nodes) > 2:
-            value = self.getValue(statement.children_nodes[3])
+            value = self.getValue(statement.children_nodes[3].children_nodes[0])
             self.symbol_table[variable] = Symbol(value.type, value.value)
         else:
             self.symbol_table[variable] = Symbol('Noob')
@@ -67,11 +68,11 @@ class SymbolAnalyzer:
     def assignment(self, statement):
         variable = statement.children_nodes[0].value
         self.lookup(variable)
-        value = self.getValue(statement.children_nodes[2])
+        value = self.getValue(statement.children_nodes[2].children_nodes[0])
         self.symbol_table[variable] = value
     
     def expression(self, statement):
-        value = self.getValue(statement)
+        value = self.getValue(statement.children_nodes[0])
         self.symbol_table['IT'] = value
 
     def cast(self, statement):
@@ -141,36 +142,122 @@ class SymbolAnalyzer:
             self.symbol_table[variable] = Symbol(self.symbol_table[variable].type, temp)
             init = False
         self.line_number = tempLine + len(statements) - 2
+
     def switch(self, statement):
         temp = self.symbol_table['IT'].value
-        
         cases = list(statement.children_nodes)[1:]
-
-        i = 1
+        self.line_number += 1
+        i = 0
         matched = False
+
         while cases[i].type == 'Case':
             omg = cases[i]
-            value = self.getValue(omg[i].children_nodes[1])
+            value = self.getValue(omg.children_nodes[1])
 
             if value.value == temp:
                 matched = True
                 break
-
+            self.line_number += len(omg.children_nodes) - 1
             i += 1
         
         if matched:
-            statements = list(omg.children_nodes)[2:]
+            tempLine = self.line_number
+            statements = list(cases[i].children_nodes)[2:]
             for statement in statements:
                 if not statement.children_nodes:
+                    self.line_number += 1
                     continue
+                if statement.children_nodes[0] == 'Break Statement':
+                    self.line_number += 1
+                    break
+                self.analyzeStatement(statement.children_nodes)
+                self.line_number += 1
+            self.line_number = tempLine + len(cases[i].children_nodes) - 1
+            i += 1
+            while cases[i].type == 'Case' or cases[i].type == 'Default Case':
+                self.line_number += len(cases[i].children_nodes) - 1 if cases[i].type == 'Case' else len(cases[i].children_nodes)
+                i += 1
+        elif cases[-2].type == 'Default Case':
+            tempLine = self.line_number
+            statements = list(cases[-2].children_nodes)[1:]
+            for statement in statements:
+                if not statement.children_nodes:
+                    self.line_number += 1
+                    continue
+                if statement.children_nodes[0] == 'Break Statement':
+                    self.line_number += 1
+                    break
+                self.analyzeStatement(statement.children_nodes)
+                self.line_number += 1
+            self.line_number = tempLine + len(cases[-2].children_nodes)
 
+    def ifElse(self, statement):
+        temp = self.symbol_table['IT']
+        
+        if temp.type != 'Troof Literal':
+            temp = self.boolTypecast(temp)
+        
+        self.line_number += 1
+
+        if temp.value == 'WIN':
+            block = statement.children_nodes[1]
+            self.line_number += 1
+
+            statements = list(block.children_nodes)[1:]
+            for s in statements:
+                if not s.children_nodes:
+                    self.line_number += 1
+                    continue
+                self.analyzeStatement(s.children_nodes)
+                self.line_number += 1
+            i = 2
+            while statement.children_nodes[i].type == 'Else-if' or statement.children_nodes[i].type == 'Else':
+                self.line_number += len(statement.children_nodes[i].children_nodes) - 1 if statement.children_nodes[i].type == 'Else-if' else len(statement.children_nodes[i].children_nodes)
+                i += 1
+        else:
+            self.line_number += len(statement.children_nodes[1].children_nodes)
+            i = 2
+            matched = False
+            while statement.children_nodes[i].type == 'Else-if':
+                conditionNode = statement.children_nodes[i].children_nodes[1]
+                condition = self.getValue(conditionNode.children_nodes[0])
+
+                if condition.type != 'Troof Literal':
+                    condition = self.boolTypecast(condition)
+
+                if condition.value == 'WIN':
+                    self.line_number += 1
+                    matched = True
+                    block = statement.children_nodes[i]
+                    statements = list(block.children_nodes)[2:]
+                    for s in statements:
+                        if not s.children_nodes:
+                            self.line_number += 1
+                            continue
+                        self.analyzeStatement(s.children_nodes)
+                        self.line_number += 1
+                    j = i+1
+                    while statement.children_nodes[j].type == 'Else-if' or statement.children_nodes[j].type == 'Else':
+                        self.line_number += len(statement.children_nodes[j].children_nodes) - 1 if statement.children_nodes[j].type == 'Else-if' else len(statement.children_nodes[j].children_nodes)
+                        j += 1
+                    break
+                else:
+                    self.line_number += len(statement.children_nodes[i].children_nodes) - 1
+                i += 1
+            if not matched:
+                if statement.children_nodes[i].type == 'Else':
+                    block = statement.children_nodes[i]
+                    statements = list(block.children_nodes)[1:]
+                    for s in statements:
+                        if not s.children_nodes:
+                            self.line_number += 1
+                            continue
+                        self.analyzeStatement(s.children_nodes)
+                        self.line_number += 1
 
     # --------------------Getting Values of expresison/literal/variable-------------------
     def getValue(self, expression):
-        if expression.children_nodes:
-            expType = expression.children_nodes[0]
-        else:
-            expType = expression
+        expType = expression
 
         if expType.type == 'Literal':
             litType = expType.children_nodes[0]
@@ -216,8 +303,8 @@ class SymbolAnalyzer:
     
     def arithmetic(self, expression):
         operands = expression.children_nodes
-        op1Exp = self.getValue(operands[1])
-        op2Exp = self.getValue(operands[2])
+        op1Exp = self.getValue(operands[1].children_nodes[0])
+        op2Exp = self.getValue(operands[2].children_nodes[0])
 
         if op1Exp.type != 'Numbr Literal' and op1Exp.type != 'Numbar Literal':
             temp = self.numTypecast(op1Exp)
@@ -256,7 +343,7 @@ class SymbolAnalyzer:
 
     def boolean(self, expression):
         operands = expression.children_nodes
-        op1Exp = self.getValue(operands[1])
+        op1Exp = self.getValue(operands[1].children_nodes[0])
 
         if op1Exp.type == 'Troof Literal':
             if op1Exp.value == 'WIN':
@@ -271,7 +358,7 @@ class SymbolAnalyzer:
                 op1 = False
         
         if expression.type != 'Not':
-            op2Exp = self.getValue(operands[2])
+            op2Exp = self.getValue(operands[2].children_nodes[0])
             if op2Exp.type == 'Troof Literal':
                 if op2Exp.value == 'WIN':
                     op2 = True
@@ -301,7 +388,7 @@ class SymbolAnalyzer:
     def infBoolean(self, expression):
         operations = list(expression.children_nodes)[2:]
 
-        res = self.getValue(expression.children_nodes[1])
+        res = self.getValue(expression.children_nodes[1].children_nodes[0])
         if res.type != 'Troof Literal':
             res = self.boolTypecast(res)
         if res.value == 'WIN':
@@ -309,7 +396,7 @@ class SymbolAnalyzer:
         else:
             ans = False
         for op in operations:
-            res = self.getValue(op)
+            res = self.getValue(op.children_nodes[0])
             if res.type != 'Troof Literal':
                 res = self.boolTypecast(res)
             if res.value == 'WIN':
@@ -331,7 +418,7 @@ class SymbolAnalyzer:
 
         toConcat = ''
         for op in operations:
-            temp = self.getValue(op)
+            temp = self.getValue(op.children_nodes[0])
             if temp.type != 'Yarn Literal':
                 temp = self.strTypecast(temp)
             toConcat += temp.value
@@ -340,8 +427,8 @@ class SymbolAnalyzer:
 
     def comparison(self, expression):
         operands = expression.children_nodes
-        op1Exp = self.getValue(operands[1])
-        op2Exp = self.getValue(operands[2])
+        op1Exp = self.getValue(operands[1].children_nodes[0])
+        op2Exp = self.getValue(operands[2].children_nodes[0])
 
         if op1Exp.type == 'Troof Literal':
             op1 = True
@@ -364,7 +451,7 @@ class SymbolAnalyzer:
             return Symbol('Troof Literal', 'FAIL')
     
     def maek(self, expression):
-        value = self.getValue(expression.children_nodes[1])
+        value = self.getValue(expression.children_nodes[1].children_nodes[0])
         dataType = expression.children_nodes[2].value
         return self.typecast(value, dataType)
     # --------------------Getting Values of expresison/literal/variable-------------------
@@ -487,4 +574,3 @@ class SymbolAnalyzer:
         
         raise Exception(f"Semantic Error:{self.line_number}: Variable \'{key}\' not declared")
     # --------------------Utils-------------------
-            

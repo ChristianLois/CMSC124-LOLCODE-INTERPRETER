@@ -392,17 +392,14 @@ class Parser:
             childNodes.append(case)
         
         if self.current_token.type == 'Case Default Keyword':
-            self.nextToken('Case Default Keyword')
-            childNodes.append(ATNode('Case Default Keyword'))
-            self.nextToken('Linebreak')
-            while(statement := self.statement(inProgBlock = True)):
-                childNodes.append(statement)
+            case = self.caseDefault()
+            childNodes.append(case)
             
         self.nextToken('If-else End')
         childNodes.append(ATNode('If-else End'))
 
         return ATNode('Switch Statement', children_nodes = childNodes)
-    
+
     def case(self):
         
         childNodes = deque()
@@ -421,7 +418,20 @@ class Parser:
             childNodes.append(statement)
         
         return ATNode('Case', children_nodes = childNodes)
-    
+
+    def caseDefault(self):
+        childNodes = deque()
+
+        self.nextToken('Case Default Keyword')
+        childNodes.append(ATNode('Case Default Keyword'))
+
+        self.nextToken('Linebreak')
+
+        while(statement := self.statement(inProgBlock = True)):
+            childNodes.append(statement)
+        
+        return ATNode('Default Case', children_nodes = childNodes)
+        
     def ifElse(self):
         childNodes = deque()
 
@@ -432,6 +442,24 @@ class Parser:
             return False
         
         self.nextToken('Linebreak')
+        
+        ifBlock = self.ifBlock()
+        childNodes.append(ifBlock)
+
+        while self.current_token.type == 'Else-if Keyword':
+            mebbe = self.mebbe()
+            childNodes.append(mebbe)
+
+        if self.current_token.type == 'Else Keyword':
+            elseBlock = self.elseBlock()
+            childNodes.append(elseBlock)
+
+        self.nextToken('If-else End')
+        childNodes.append(ATNode('If-else End'))
+        return(ATNode('If-else Statement', children_nodes = childNodes))
+
+    def ifBlock(self):
+        childNodes = deque()
 
         self.nextToken('If Keyword')
         childNodes.append(ATNode('If Keyword'))
@@ -440,23 +468,20 @@ class Parser:
 
         while(statement := self.statement(inProgBlock = True)):
             childNodes.append(statement)
-            
-        while self.current_token.type == 'Else-if Keyword':
-            mebbe = self.mebbe()
-            childNodes.append(mebbe)
 
-        if self.current_token.type == 'Else Keyword':
-            self.nextToken('Else Keyword')
-            childNodes.append(ATNode('Else Keyword'))
+        return ATNode('If', children_nodes = childNodes)
 
-            self.nextToken('Linebreak')
+    def elseBlock(self):
+        childNodes = deque()
+        self.nextToken('Else Keyword')
+        childNodes.append(ATNode('Else Keyword'))
 
-            while(statement := self.statement(inProgBlock = True)):
-                childNodes.append(statement)
+        self.nextToken('Linebreak')
 
-        self.nextToken('If-else End')
-        childNodes.append(ATNode('If-else End'))
-        return(ATNode('If-else Statement', children_nodes = childNodes))
+        while(statement := self.statement(inProgBlock = True)):
+            childNodes.append(statement)
+        
+        return ATNode('Else', children_nodes = childNodes)
 
     def mebbe(self):
         childNodes = deque()
