@@ -28,6 +28,8 @@ class SymbolAnalyzer:
             self.expression(statement)
         elif statement.type == 'Input Statement':
             self.gimmeh(statement)
+        elif statement.type == 'Loop Statement':
+            self.loop(statement)
         elif statement.type == 'Declaration Statement':
             self.declaration(statement)
 
@@ -76,6 +78,8 @@ class SymbolAnalyzer:
 
         self.symbol_table[variable] = newValue
 
+    def loop(self, statement):
+        pass
     # --------------------Getting Values of expresison/literal/variable-------------------
     def getValue(self, expression):
         expType = expression.children_nodes[0]

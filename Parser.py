@@ -328,6 +328,7 @@ class Parser:
             return False
         
         childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+        temp = self.current_token.value
         self.nextToken('Variable Identifier')
 
         childNodes.append(ATNode('Loop Operation', value = self.current_token.value))
@@ -354,7 +355,11 @@ class Parser:
         childNodes.append(ATNode('Loop End'))
 
         childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
+        temp2 = self.current_token.value
         self.nextToken('Variable Identifier')
+
+        if temp != temp2:
+            raise Exception(f"Syntax Error:{self.current_token.line_num}:Expected mtching loop name at {self.current_token.value}")
 
         return ATNode('Loop Statement', children_nodes = childNodes)
 
