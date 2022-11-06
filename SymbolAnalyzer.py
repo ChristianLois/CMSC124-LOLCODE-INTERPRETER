@@ -12,7 +12,7 @@ class SymbolAnalyzer:
         for node in self.atnode_tree.children_nodes:
             if node.type == 'Statement':
                 self.analyzeStatement(node.children_nodes)
-                self.line_number += 1 
+                self.line_number += 1
             else:
                 self.line_number += 1 
         
@@ -32,8 +32,11 @@ class SymbolAnalyzer:
             self.gimmeh(statement)
         elif statement.type == 'Loop Statement':
             self.loop(statement)
+        elif statement.type == 'Switch Statement':
+            self.switch(statement)
         elif statement.type == 'Declaration Statement':
             self.declaration(statement)
+            
 
     def visible(self, statement):
         printNodes = list(statement.children_nodes)[1:]
@@ -104,6 +107,9 @@ class SymbolAnalyzer:
 
         temp = self.symbol_table[variable].value
         stopExec = False
+
+        tempLine = self.line_number
+        init = True
         while True:
             if condition == 'TIL' or condition == 'WILE':
                 expression = self.evaluateExpression(expressionNode.children_nodes[0])
@@ -112,26 +118,59 @@ class SymbolAnalyzer:
                 if ((condition == 'TIL' and expression.value == 'WIN') or
                 (condition == 'WILE' and expression.value == 'FAIL')):
                     break
-
+            
             for statement in statements:
                 if statement.type == 'Loop End':
                     break
+                if not statement.children_nodes:
+                    self.line_number += 1 if init else 0
+                    continue
                 if statement.children_nodes[0].type == 'Break Statement':
                     stopExec = True
+                    self.line_number += 1 if init else 0
                     break
                 self.analyzeStatement(statement.children_nodes)
+                self.line_number += 1 if init else 0
+
             if stopExec:
                 break
-
             if operation == 'UPPIN':
                 temp += 1
             elif operation == 'NERFIN':
                 temp -= 1
             self.symbol_table[variable] = Symbol(self.symbol_table[variable].type, temp)
-            
+            init = False
+        self.line_number = tempLine + len(statements) - 2
+    def switch(self, statement):
+        temp = self.symbol_table['IT'].value
+        
+        cases = list(statement.children_nodes)[1:]
+
+        i = 1
+        matched = False
+        while cases[i].type == 'Case':
+            omg = cases[i]
+            value = self.getValue(omg[i].children_nodes[1])
+
+            if value.value == temp:
+                matched = True
+                break
+
+            i += 1
+        
+        if matched:
+            statements = list(omg.children_nodes)[2:]
+            for statement in statements:
+                if not statement.children_nodes:
+                    continue
+
+
     # --------------------Getting Values of expresison/literal/variable-------------------
     def getValue(self, expression):
-        expType = expression.children_nodes[0]
+        if expression.children_nodes:
+            expType = expression.children_nodes[0]
+        else:
+            expType = expression
 
         if expType.type == 'Literal':
             litType = expType.children_nodes[0]
