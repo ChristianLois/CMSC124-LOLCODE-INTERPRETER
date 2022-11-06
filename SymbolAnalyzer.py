@@ -13,6 +13,8 @@ class SymbolAnalyzer:
             if node.type == 'Statement':
                 self.analyzeStatement(node.children_nodes)
                 self.line_number += 1
+            elif node.type == 'Multiline Comment':
+                self.line_number += len(node.children_nodes) - 1
             else:
                 self.line_number += 1 
         
@@ -37,7 +39,9 @@ class SymbolAnalyzer:
         elif statement.type == 'Declaration Statement':
             self.declaration(statement)
         elif statement.type == 'If-else Statement':
-            self.ifElse(statement)   
+            self.ifElse(statement)
+        elif statement.type == 'Multiline Comment':
+            self.line_number += len(statement.children_nodes)
 
     def visible(self, statement):
         printNodes = list(statement.children_nodes)[1:]

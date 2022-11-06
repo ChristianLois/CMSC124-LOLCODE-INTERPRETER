@@ -60,9 +60,7 @@ def execute():
     else:
         for lex in lexemes:         #insert values
             if lex.type != 'Linebreak':
-                lexemeTable.insert(parent='', index='end', values=(lex.value, lex.type))
-    
-            
+                lexemeTable.insert(parent='', index='end', values=(lex.value, lex.type))    
 
 window = Tk()
 window.title("LOL CODE Interpreter")

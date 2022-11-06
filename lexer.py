@@ -84,9 +84,9 @@ class Lexer:
                             line = line[4:].lstrip()
                             in_comment = False
                         elif(tldr_check):
-                            start = tldr_check.span()[0]
-                            tokens.append(Token('Comment', line[:start+1].strip(), line_no))
-                            line = line[start+1:]
+                            tokens.append(Token('Multiline Comment End', 'TLDR', line_no))
+                            line = line[-1:]
+                            in_comment = False
                         else:
                             tokens.append(Token('Comment', line[:-1], line_no))
                             line = line[len(line):]
@@ -105,6 +105,7 @@ class Lexer:
                             elif type == 'Multiline Comment Start':
                                 token_value = matched_token.group(0)
                                 tokens.append(Token(type, token_value.strip(), line_no))
+                                line = line[-1:].lstrip()
                                 in_comment = True  
                             elif type == 'Yarn Literal':
                                 temp_token = matched_token.group(0)
@@ -121,4 +122,5 @@ class Lexer:
                 if(hasToken and not in_comment):
                     tokens.append(Token('Linebreak', '\\n', line_no))
             line_no += 1
+        tokens.append(Token('End of File', 'EOF', line_no))
         return tokens  

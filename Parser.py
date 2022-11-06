@@ -510,9 +510,11 @@ class Parser:
         self.nextToken('Multiline Comment Start')
         childNodes.append(ATNode('Multiline Comment Start'))
         
-        while(self.current_token.type != 'Multiline Comment End'):
-            self.nextToken('Comment')
-            childNodes.append(ATNode('Comment'))
+        while(self.current_token.type == 'Comment' or self.current_token.type == 'Linebreak'):
+            if self.token_idx + 1 > len(self.tokens):
+                break
+            self.nextToken(self.current_token.type)
+            childNodes.append(ATNode(self.current_token.type))
         
         self.nextToken('Multiline Comment End')
         childNodes.append(ATNode('Multiline Comment End'))
@@ -565,16 +567,17 @@ class Parser:
     def lolProgram(self):
         treeNode = deque()
 
-        while(self.current_token.type != 'Code Start'):
-            if self.current_token == 'Comment Delimiter':
+        while(self.current_token.type != 'Code Start' and self.token_idx + 1 < len(self.tokens)):
+            if self.current_token.type == 'Comment Delimiter':
                 self.nextToken('Comment Delimiter')
                 treeNode.append(ATNode('Comment Delimiter'))
                 self.nextToken('Comment')
-                treeNode.append(ATNode('Comment'))
+                self.nextToken('Linebreak')
             elif(self.current_token.type == 'Multiline Comment Start'):
                 treeNode.append(self.multiComment())
             elif(self.current_token.type == 'Linebreak'):
                 self.nextToken('Linebreak')
+                treeNode.append(ATNode('Linebreak'))
             else:
                 self.nextToken('Code Start')
 
@@ -597,15 +600,16 @@ class Parser:
         treeNode.append(ATNode('Code End'))
 
         while(self.token_idx < len(self.tokens)):
-            if self.current_token == 'Comment Delimiter':
+            if self.current_token.type == 'Comment Delimiter':
                 self.nextToken('Comment Delimiter')
                 treeNode.append(ATNode('Comment Delimiter'))
                 self.nextToken('Comment')
-                treeNode.append(ATNode('Comment'))
+                self.nextToken('Linebreak')
             elif(self.current_token.type == 'Multiline Comment Start'):
                 treeNode.append(self.multiComment())
             elif(self.current_token.type == 'Linebreak'):
                 self.nextToken('Linebreak')
+                treeNode.append(ATNode('Linebreak'))
             else:
                 self.nextToken('End of File')
 
