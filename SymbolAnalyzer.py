@@ -15,6 +15,8 @@ class SymbolAnalyzer:
                 self.line_number += 1 
             else:
                 self.line_number += 1 
+        
+        return self.symbol_table
     
     def analyzeStatement(self, node):
         statement = node[0]
@@ -79,10 +81,58 @@ class SymbolAnalyzer:
         self.symbol_table[variable] = newValue
 
     def loop(self, statement):
-        pass
+        operation = statement.children_nodes[2].value
+        variable = statement.children_nodes[4].value
+        self.lookup(variable)
+
+        if self.symbol_table[variable].type != 'Numbr Literal' and self.symbol_table[variable].type != 'Numbar Literal':
+            self.symbol_table[variable] = self.numTypecast(self.symbol_table[variable])
+        
+        condition = False
+        expression = None
+        
+        stIdx = 5
+        if statement.children_nodes[5].type == 'Condition Keyword':
+            condition = statement.children_nodes[5].value
+            expressionNode = statement.children_nodes[6]
+            expression = self.evaluateExpression(expressionNode.children_nodes[0])
+            stIdx = 7
+        
+        self.line_number += 1
+
+        statements = list(statement.children_nodes)[stIdx:]
+
+        temp = self.symbol_table[variable].value
+        stopExec = False
+        while True:
+            if condition == 'TIL' or condition == 'WILE':
+                expression = self.evaluateExpression(expressionNode.children_nodes[0])
+                if expression.type != 'Troof Literal':
+                    expression = self.boolTypecast(expression)
+                if ((condition == 'TIL' and expression.value == 'WIN') or
+                (condition == 'WILE' and expression.value == 'FAIL')):
+                    break
+
+            for statement in statements:
+                if statement.type == 'Loop End':
+                    break
+                if statement.children_nodes[0].type == 'Break Statement':
+                    stopExec = True
+                    break
+                self.analyzeStatement(statement.children_nodes)
+            if stopExec:
+                break
+
+            if operation == 'UPPIN':
+                temp += 1
+            elif operation == 'NERFIN':
+                temp -= 1
+            self.symbol_table[variable] = Symbol(self.symbol_table[variable].type, temp)
+            
     # --------------------Getting Values of expresison/literal/variable-------------------
     def getValue(self, expression):
         expType = expression.children_nodes[0]
+
         if expType.type == 'Literal':
             litType = expType.children_nodes[0]
             if litType.type == 'Yarn Literal':
@@ -144,7 +194,6 @@ class SymbolAnalyzer:
 
         if expression.type == 'Addition':
             ans = op1 + op2
-            print(op1,op2,ans)
         elif expression.type == 'Subtraction':
             ans = op1 - op2
         elif expression.type == 'Multiplication':

@@ -343,7 +343,8 @@ class Parser:
         if(self.current_token.type == 'Condition Keyword'):
             childNodes.append(ATNode('Condition Keyword', value = self.current_token.value))
             self.nextToken('Condition Keyword')
-            expression = self.expression(True)
+            if (not (expression := self.expression(True))):
+                self.nextToken('Expression')
             childNodes.append(expression)
         
         self.nextToken('Linebreak')
@@ -359,7 +360,7 @@ class Parser:
         self.nextToken('Variable Identifier')
 
         if temp != temp2:
-            raise Exception(f"Syntax Error:{self.current_token.line_num}:Expected mtching loop name at {self.current_token.value}")
+            raise Exception(f"Syntax Error:{self.current_token.line_num}:Expected matching loop name at {self.current_token.value}")
 
         return ATNode('Loop Statement', children_nodes = childNodes)
 
@@ -438,10 +439,8 @@ class Parser:
         self.nextToken('Linebreak')
 
         while(statement := self.statement(inProgBlock = True)):
-
             childNodes.append(statement)
             
-        
         while self.current_token.type == 'Else-if Keyword':
             mebbe = self.mebbe()
             childNodes.append(mebbe)
