@@ -22,7 +22,7 @@ def openFile():        #for opening file
         text = input_file.read()
         txt_edit.insert(END, text)
     window.title(f"Text Editor Application - {fp}")
-    t = fp
+
 def saveFile():        #for saving file
     fp = asksaveasfilename(
         defaultextension="lol",
@@ -36,27 +36,43 @@ def saveFile():        #for saving file
     window.title(f"Text Editor Application - {fp}")
 
 def execute():
-    global txt_edit
+    global txt_edit, stdin, stdout
 
     lex = Lexer(txt_edit.get("1.0",'end-1c'))
 
     lexemes = lex.tokenize()
 
     lexemeTable.delete(*lexemeTable.get_children())     #reset lexeme table
+    symbolTable.delete(*symbolTable.get_children()) 
 
     symbolTree = None
+
+    stdout.delete('1.0', 'end')
 
     if (len(lexemes) > 0):
         parser = Parser(lexemes)
         symbolTree = parser.lolProgram()
     
-    if(symbolTree):
-        symbolAnalyer = SymbolAnalyzer(symbolTree)
-        codeExecution = symbolAnalyer.analyze()
-
     for lex in lexemes:         #insert values
-        if lex.type != 'Linebreak':
-            lexemeTable.insert(parent='', index='end', values=(lex.value, lex.type))    
+        if (lex.type != 'Linebreak' and
+            lex.type != 'Comment' and
+            lex.type != 'Comment Delimiter' and 
+            lex.type != 'EOF' and 
+            lex.type != 'Multiline Comment' and
+            lex.type != 'Multiline Comment Start' and
+            lex.type != 'Multiline Comment End'):
+            lexemeTable.insert(parent='', index='end', values=(lex.value, lex.type))  
+    
+    if(symbolTree):
+        inputs = stdin.get("1.0",'end-1c').split('\n')
+        symbolAnalyer = SymbolAnalyzer(symbolTree, stdin = inputs)
+        symbols, output = symbolAnalyer.analyze()
+    
+    for symbol in symbols.keys():         #insert values
+        symbolTable.insert(parent='', index='end', values=(symbol, symbols[symbol].value))  
+    
+    if len(output) > 0:
+        stdout.insert(END, output)
 
 window = Tk()
 window.title("LOL CODE Interpreter")
@@ -110,7 +126,7 @@ symbolTable.heading("Identifier", text="Identifier", anchor=W)
 symbolTable.heading("Value", text="Value", anchor=W)
 
 #listbox for execution
-execBox = Listbox(window, height = 18, width = 150)
+stdout = Text(window, height = 18, width = 112)
 
 stdin = Text(window, height=17, width=30)
 font = tkfont.Font(font=stdin['font'])
@@ -120,7 +136,7 @@ stdin.config(tabs=tab)
 #placing to gui
 lexemeTable.place(x = 675, y = 28)
 symbolTable.place(x = 935, y = 28)
-execBox.place(x = 20, y = 350)
+stdout.place(x = 20, y = 350)
 stdin.place(x = 935, y = 366)
 
 label1.place(x = 769, y = 3)    #lexemes label

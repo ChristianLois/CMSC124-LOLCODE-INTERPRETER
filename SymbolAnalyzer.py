@@ -5,9 +5,11 @@ import math
 import re
 
 class SymbolAnalyzer:
-    def __init__(self, atnode_tree):
+    def __init__(self, atnode_tree, stdin = []):
         self.atnode_tree = atnode_tree
         self.symbol_table = {'IT': Symbol('Noob', value = None)}
+        self.stdin = stdin
+        self.output = ''
         self.line_number = 1
 
     def analyze(self):
@@ -20,7 +22,7 @@ class SymbolAnalyzer:
             else:
                 self.line_number += 1 
         
-        return self.symbol_table
+        return self.symbol_table, self.output
     
     def analyzeStatement(self, node):
         statement = node[0]
@@ -54,7 +56,7 @@ class SymbolAnalyzer:
             if expValue.type != 'Yarn Literal':
                 expValue = self.strTypecast(expValue)
             toPrint += expValue.value
-        print(toPrint)
+        self.output += toPrint + '\n'
 
     def declaration(self, statement):
         variable = statement.children_nodes[1].value
@@ -68,7 +70,11 @@ class SymbolAnalyzer:
     def gimmeh(self, statement):
         variable = statement.children_nodes[1].value
         self.lookup(variable)
-        temp = input()
+        if len(self.stdin) > 0:
+            temp = self.stdin[0]
+            self.stdin.pop(0)
+        else:
+            temp = ''
         self.symbol_table[variable] = Symbol('Yarn Literal', temp)
 
     def assignment(self, statement):
