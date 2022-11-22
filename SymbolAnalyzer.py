@@ -1,5 +1,4 @@
 # TASK: improve GUI
-
 from Symbol import Symbol
 import math
 import re
@@ -44,9 +43,13 @@ class SymbolAnalyzer:
         elif statement.type == 'Declaration Statement':
             self.declaration(statement)
         elif statement.type == 'If-else Statement':
-            self.ifElse(statement)
+            return self.ifElse(statement)
         elif statement.type == 'Multiline Comment':
             self.line_number += len(statement.children_nodes)
+        elif statement.type == 'Break Statement':
+            return 1
+
+        return 0
 
     def visible(self, statement):
         printNodes = list(statement.children_nodes)[1:]
@@ -139,11 +142,10 @@ class SymbolAnalyzer:
                 if not statement.children_nodes:
                     self.line_number += 1 if init else 0
                     continue
-                if statement.children_nodes[0].type == 'Break Statement':
+                if self.analyzeStatement(statement.children_nodes):
                     stopExec = True
                     self.line_number += 1 if init else 0
                     break
-                self.analyzeStatement(statement.children_nodes)
                 self.line_number += 1 if init else 0
 
             if stopExec:
@@ -180,11 +182,10 @@ class SymbolAnalyzer:
                 if not statement.children_nodes:
                     self.line_number += 1
                     continue
-                if statement.children_nodes[0] == 'Break Statement':
-                    self.line_number += 1
-                    break
-                self.analyzeStatement(statement.children_nodes)
+                status = self.analyzeStatement(statement.children_nodes)
                 self.line_number += 1
+                if status == 1:
+                    break
             self.line_number = tempLine + len(cases[i].children_nodes) - 1
             i += 1
             while cases[i].type == 'Case' or cases[i].type == 'Default Case':
@@ -197,11 +198,10 @@ class SymbolAnalyzer:
                 if not statement.children_nodes:
                     self.line_number += 1
                     continue
-                if statement.children_nodes[0] == 'Break Statement':
-                    self.line_number += 1
-                    break
-                self.analyzeStatement(statement.children_nodes)
+                status = self.analyzeStatement(statement.children_nodes)
                 self.line_number += 1
+                if status == 1:
+                    break
             self.line_number = tempLine + len(cases[-2].children_nodes)
 
     def ifElse(self, statement):
@@ -212,6 +212,8 @@ class SymbolAnalyzer:
         
         self.line_number += 1
 
+        status = 0
+
         if temp.value == 'WIN':
             block = statement.children_nodes[1]
             self.line_number += 1
@@ -221,7 +223,7 @@ class SymbolAnalyzer:
                 if not s.children_nodes:
                     self.line_number += 1
                     continue
-                self.analyzeStatement(s.children_nodes)
+                status = self.analyzeStatement(s.children_nodes)
                 self.line_number += 1
             i = 2
             while statement.children_nodes[i].type == 'Else-if' or statement.children_nodes[i].type == 'Else':
@@ -247,7 +249,7 @@ class SymbolAnalyzer:
                         if not s.children_nodes:
                             self.line_number += 1
                             continue
-                        self.analyzeStatement(s.children_nodes)
+                        status = self.analyzeStatement(s.children_nodes)
                         self.line_number += 1
                     j = i+1
                     while statement.children_nodes[j].type == 'Else-if' or statement.children_nodes[j].type == 'Else':
@@ -265,9 +267,9 @@ class SymbolAnalyzer:
                         if not s.children_nodes:
                             self.line_number += 1
                             continue
-                        self.analyzeStatement(s.children_nodes)
+                        status = self.analyzeStatement(s.children_nodes)
                         self.line_number += 1
-
+        return status
     # --------------------Getting Values of expresison/literal/variable-------------------
     def getValue(self, expression):
         expType = expression

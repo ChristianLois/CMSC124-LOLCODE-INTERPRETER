@@ -1,7 +1,6 @@
 from tkinter import *
 from tkinter.filedialog import askopenfilename, asksaveasfilename      # for choosing file
 from tkinter import ttk                 #for tables of lexemes and symbols
-from tkinter import messagebox
 
 from Lexer import Lexer
 from Parser import Parser
@@ -91,7 +90,7 @@ def execute():
         if len(output) > 0:
             stdout.insert(END, output)
             stdout.configure(fg='black')
-
+            
 window = Tk()
 window.title("LOL CODE Interpreter")
 window.configure(background = "gray")

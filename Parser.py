@@ -237,8 +237,11 @@ class Parser:
         else:
             return False
         
-        childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
-        self.nextToken('Variable Identifier')
+        if self.current_token.type == 'Variable Identifier' or self.current_token.type == 'Implicit Variable':
+            childNodes.append(ATNode(self.current_token.type, value = self.current_token.value))
+            self.nextToken(self.current_token.type)
+        else:
+            self.nextToken('Variable Identifier')
 
         return ATNode('Input Statement', children_nodes = childNodes)
     # ------------------------I/O------------------------
