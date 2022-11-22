@@ -79,7 +79,10 @@ class SymbolAnalyzer:
             self.stdin.pop(0)
         else:
             temp = ''
-        self.symbol_table[variable] = Symbol('Yarn Literal', temp)
+        try:
+            self.symbol_table[variable] = self.numTypecast(Symbol('Yarn Literal', temp))
+        except:
+            self.symbol_table[variable] = Symbol('Yarn Literal', temp)
 
     def assignment(self, statement):
         variable = statement.children_nodes[0].value
@@ -587,6 +590,11 @@ class SymbolAnalyzer:
                     raise Exception()
             elif dataType == 'YARN':
                 return symbol
+            elif dataType == 'TROOF':
+                if symbol.value == '':
+                    return Symbol('Troof Literal', 'FAIL')
+                else:
+                    return Symbol('Troof Literal', 'WIN')
             else:
                 self.err = f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}"
                 raise Exception()
