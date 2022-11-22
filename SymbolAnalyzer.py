@@ -10,6 +10,7 @@ class SymbolAnalyzer:
         self.symbol_table = {'IT': Symbol('Noob', value = None)}
         self.stdin = stdin
         self.output = ''
+        self.err = ''
         self.line_number = 1
 
     def analyze(self):
@@ -483,7 +484,8 @@ class SymbolAnalyzer:
         elif expression.type == 'Noob':
             return Symbol('Troof Literal', 'FAIL')
         else:
-            raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to TROOF")
+            self.err = f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to TROOF"
+            raise Exception()
     
     def numTypecast(self, expression):
         if expression.type == 'Yarn Literal':
@@ -492,14 +494,16 @@ class SymbolAnalyzer:
             elif re.match(r"-?[0-9]+$", expression.value):
                 return Symbol('Numbr Literal', int(expression.value))
             else:
-                raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to numerical data type")
+                self.err = f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to numerical data type"
+                raise Exception()
         elif expression.type == 'Troof Literal':
             if expression.value == 'WIN':
                 return Symbol('Numbr Literal', 1)
             else:
                 return Symbol('Numbr Literal', 0)
         else:
-            raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to numerical data type")
+            self.err = f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to numerical data type"
+            raise Exception()
 
     def strTypecast(self, expression):
         if expression.type == 'Numbr Literal':
@@ -509,7 +513,8 @@ class SymbolAnalyzer:
         elif expression.type == 'Troof Literal':
             return Symbol('Yarn Literal', expression.value)
         else:
-            raise Exception(f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to YARN")
+            self.err = f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to YARN"
+            raise Exception()
     # --------------------Implicit typecasting-------------------
 
     # --------------------Explicit typecasting-------------------
@@ -537,7 +542,8 @@ class SymbolAnalyzer:
             elif dataType == 'TROOF':
                 return symbol
             else:
-                raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+                self.err = f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}"
+                raise Exception()
         elif symbol.type == 'Numbar Literal':
             if dataType == 'NUMBR':
                 return Symbol('Numbr Literal', int(symbol.value))
@@ -549,7 +555,8 @@ class SymbolAnalyzer:
             elif dataType == 'NUMBAR':
                 return symbol
             else:
-                raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+                self.err = f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}"
+                raise Exception()
         elif symbol.type == 'Numbr Literal':
             if dataType == 'NUMBAR':
                 return Symbol('Numbar Literal', float(symbol.value))
@@ -561,22 +568,26 @@ class SymbolAnalyzer:
             elif dataType == 'NUMBR':
                 return symbol
             else:
-                raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+                self.err = f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}"
+                raise Exception()
         elif symbol.type == 'Yarn Literal':
             if dataType == 'NUMBAR':
                 if re.match(r"-?[0-9]+\.[0-9]+$", symbol.value) or re.match(r"-?[0-9]+$", symbol.value):
                     return Symbol('Numbar Literal', float(symbol.value))
                 else:
-                    raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+                    self.err = f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}"
+                    raise Exception()
             elif dataType == 'NUMBR':
                 if re.match(r"-?[0-9]+$", symbol.value):
                     return Symbol('Numbr Literal', int(symbol.value))
                 else:
-                    raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+                    self.err = f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}"
+                    raise Exception()
             elif dataType == 'YARN':
                 return symbol
             else:
-                raise Exception(f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}")
+                self.err = f"Semantic Error:{self.line_number}: {symbol.value} cannot be typecasted to {dataType}"
+                raise Exception()
     # --------------------Explicit typecasting-------------------
 
     # --------------------Utils-------------------
@@ -584,5 +595,6 @@ class SymbolAnalyzer:
         if key in self.symbol_table.keys():
             return
         
-        raise Exception(f"Semantic Error:{self.line_number}: Variable \'{key}\' not declared")
+        self.err = f"Semantic Error:{self.line_number}: Variable \'{key}\' not declared"
+        raise Exception()
     # --------------------Utils-------------------

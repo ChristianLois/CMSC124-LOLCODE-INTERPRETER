@@ -62,6 +62,7 @@ TOKENS = [
 class Lexer:
     def __init__(self, text):
         self.text = text
+        self.err = ''
 
     def tokenize(self):
         tokens = deque()
@@ -118,7 +119,8 @@ class Lexer:
                             line = line[matched_token.end():].lstrip()
                             break
                     if(not matched_token and not in_comment):
-                        raise Exception(f"Error in line number {line_no}: Invalid token {line}")
+                        self.err = f"Error:{line_no}:Invalid token {line}"
+                        raise Exception()
                 if(hasToken and not in_comment):
                     tokens.append(Token('Linebreak', '\\n', line_no))
             line_no += 1

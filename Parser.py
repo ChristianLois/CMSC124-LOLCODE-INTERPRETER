@@ -6,6 +6,7 @@ class Parser:
         self.tokens = tokens
         self.token_idx = 0
         self.current_token = self.tokens[self.token_idx]
+        self.err = ''
     
     def nextToken(self, token_type):
         if  self.current_token.type == token_type:
@@ -19,7 +20,8 @@ class Parser:
             self.nextToken('Comment')
             self.nextToken('Linebreak')
         else:
-            raise Exception(f"Syntax Error:{self.current_token.line_num}:Expected {token_type} at {self.current_token.value}")
+            self.err = f"Syntax Error:{self.current_token.line_num}:Expected {token_type} at {self.current_token.value}"
+            raise Exception()
 
     # ------------------------LITERALS/EXPRESISON/VARIABLE------------------------
     def exprvar(self, infAr):

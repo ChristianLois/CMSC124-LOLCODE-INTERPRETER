@@ -37,27 +37,40 @@ def saveFile():        #for saving file
 
 def execute():
     global txt_edit, stdin, stdout
-
-    lex = Lexer(txt_edit.get("1.0",'end-1c'))
-
-    lexemes = lex.tokenize()
-
+    
     lexemeTable.delete(*lexemeTable.get_children())     #reset lexeme table
     symbolTable.delete(*symbolTable.get_children()) 
-
-    symbolTree = None
-
     stdout.delete('1.0', 'end')
 
-    if (len(lexemes) > 0):
-        parser = Parser(lexemes)
-        symbolTree = parser.lolProgram()
+    code = txt_edit.get("1.0",'end-1c')
+
+    if code.isspace():
+        return
     
+    try:
+        lex = Lexer(code)
+        lexemes = lex.tokenize()
+    except:
+        stdout.insert(END, lex.err)
+        stdout.configure(fg='red')
+        return
+
+    symbolTree = None
+    
+    if (len(lexemes) > 2):
+        try:
+            parser = Parser(lexemes)
+            symbolTree = parser.lolProgram()
+        except:
+            stdout.insert(END, parser.err)
+            stdout.configure(fg='red')
+            return
+        
     for lex in lexemes:         #insert values
         if (lex.type != 'Linebreak' and
             lex.type != 'Comment' and
             lex.type != 'Comment Delimiter' and 
-            lex.type != 'EOF' and 
+            lex.type != 'End of File' and 
             lex.type != 'Multiline Comment' and
             lex.type != 'Multiline Comment Start' and
             lex.type != 'Multiline Comment End'):
@@ -65,14 +78,19 @@ def execute():
     
     if(symbolTree):
         inputs = stdin.get("1.0",'end-1c').split('\n')
-        symbolAnalyer = SymbolAnalyzer(symbolTree, stdin = inputs)
-        symbols, output = symbolAnalyer.analyze()
-    
-    for symbol in symbols.keys():         #insert values
-        symbolTable.insert(parent='', index='end', values=(symbol, symbols[symbol].value))  
-    
-    if len(output) > 0:
-        stdout.insert(END, output)
+        try:
+            symbolAnalyer = SymbolAnalyzer(symbolTree, stdin = inputs)
+            symbols, output = symbolAnalyer.analyze()
+        except:
+            stdout.insert(END, symbolAnalyer.err)
+            stdout.configure(fg='red')
+            return
+        for symbol in symbols.keys():         #insert values
+            symbolTable.insert(parent='', index='end', values=(symbol, symbols[symbol].value))  
+
+        if len(output) > 0:
+            stdout.insert(END, output)
+            stdout.configure(fg='black')
 
 window = Tk()
 window.title("LOL CODE Interpreter")
