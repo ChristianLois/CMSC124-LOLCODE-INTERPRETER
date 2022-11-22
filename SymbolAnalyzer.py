@@ -1,3 +1,5 @@
+# TASK: improve GUI
+
 from Symbol import Symbol
 import math
 import re
