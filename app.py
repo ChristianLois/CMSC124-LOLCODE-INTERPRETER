@@ -31,13 +31,15 @@ def openFile():
     window.title(f"Text Editor Application - {fp}")
 
 # saves the content of the text editor to a file
-def saveFile(): 
+def saveFile():
+    global label3 
     fp = asksaveasfilename(
         defaultextension="lol",
         filetypes=[("LOL CODE Files", "*.lol"), ("All Files", "*.*")],
     )
     if not fp:
         return
+    label3.config(text = fp)
     with open(fp, "w") as output_file:
         text = txt_edit.get(1.0, END)
         output_file.write(text)

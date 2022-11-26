@@ -84,7 +84,7 @@ class Lexer:
             if line == '\n':            # empty line
                 tokens.append(Token('Linebreak', '\\n', line_no))
             else:
-                while(line !=''):       # while there are possible tokens
+                while(line !='' and line != '\n'):       # while there are possible tokens
                     hasToken = True
                     # if in multiline comment
                     if(in_comment):
@@ -96,7 +96,7 @@ class Lexer:
                             in_comment = False
                         elif(tldr_check):
                             tokens.append(Token('Multiline Comment End', 'TLDR', line_no))
-                            line = line[-1:]
+                            line = line[tldr_check.end():]
                             in_comment = False
                         else:
                             tokens.append(Token('Comment', line[:-1], line_no))
