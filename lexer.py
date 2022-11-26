@@ -1,7 +1,13 @@
+# Author: Christian Olo
+# Program Description: A LOLCode interpreter developed using python
+
+# source code for the lexer
+
 import re
 from collections import deque
-from Tokens import Token
+from Tokens import Token                    # uses the tokens class to store valid tokens
 
+# accepted tokens
 TOKENS = [
     (r"^HAI\s", "Code Start"),
     (r"^KTHXBYE$", "Code End"),
@@ -62,21 +68,25 @@ TOKENS = [
 class Lexer:
     def __init__(self, text):
         self.text = text
-        self.err = ''
+        self.err = ''           # for printing the error if any
 
+    # tokenizes the provided text
     def tokenize(self):
-        tokens = deque()
+        tokens = deque()                # stores valid token objects
         lines = self.text.split('\n')
         line_no = 1
         in_comment = False
+
+        # iterates through each line of the source code
         for line in lines:
-            line = line.strip()+'\n'
+            line = line.strip()+'\n'    # strips leading and trailing spaces
             hasToken = False
-            if line == '\n':
+            if line == '\n':            # empty line
                 tokens.append(Token('Linebreak', '\\n', line_no))
             else:
-                while(line !=''):
+                while(line !=''):       # while there are possible tokens
                     hasToken = True
+                    # if in multiline comment
                     if(in_comment):
                         tldr_check = re.search(r"\sTLDR\s", line)
                         if(line[:4] == 'TLDR'):
@@ -92,10 +102,11 @@ class Lexer:
                             tokens.append(Token('Comment', line[:-1], line_no))
                             line = line[len(line):]
                         continue
+                    # checks the list of provided valid tokens if one would match the current lin
                     for token in TOKENS:       
                         pattern, type = token
-                        matched_token = re.match(pattern, line)
-                        if(matched_token):
+                        matched_token = re.match(pattern, line)         # checks if curr token match the line
+                        if(matched_token):      # a token is matched
                             if type == 'Comment Delimiter':
                                 token_value = matched_token.group(0)
                                 tokens.append(Token(type, token_value.strip(), line_no))
@@ -116,13 +127,13 @@ class Lexer:
                             else:
                                 token_value = matched_token.group(0)
                                 tokens.append(Token(type, token_value.strip(), line_no))
-                            line = line[matched_token.end():].lstrip()
+                            line = line[matched_token.end():].lstrip()      # removes the matched word from the line
                             break
-                    if(not matched_token and not in_comment):
+                    if(not matched_token and not in_comment):               # raises invalid tokens
                         self.err = f"Error:{line_no}:Invalid token {line}"
                         raise Exception()
                 if(hasToken and not in_comment):
                     tokens.append(Token('Linebreak', '\\n', line_no))
             line_no += 1
-        tokens.append(Token('End of File', 'EOF', line_no))
+        tokens.append(Token('End of File', 'EOF', line_no))                 # for checking EOF
         return tokens  

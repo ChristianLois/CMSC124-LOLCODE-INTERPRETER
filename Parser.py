@@ -1,4 +1,15 @@
-from ATNode import ATNode
+# Author: Christian Olo
+# Program Description: A LOLCode interpreter developed using python
+
+# source code for the parser
+# 1. Creates a symbol tree by checking the tokens. Every grammar is a child
+# in which the lolProgram is the root node
+# 2. Linearly checks the tokens, and if a token did not match the grammar by checking
+# it using the nextToken function, an error is raised.
+# 3. Uses recursion to append childNodes until non-terminal grammars
+
+
+from ATNode import ATNode           # uses the ATNode class to see valid syntax symbols
 from collections import deque
 
 class Parser:
@@ -8,25 +19,30 @@ class Parser:
         self.current_token = self.tokens[self.token_idx]
         self.err = ''
     
+    # checks if the current token is equal to the token_type
+    # this is where errors are raised if invalid syntax
     def nextToken(self, token_type):
+        # if valid token, proceed to the next
         if  self.current_token.type == token_type:
             if self.token_idx + 1 < len(self.tokens):
                 self.token_idx += 1
                 self.current_token = self.tokens[self.token_idx]
             else:
                 self.token_idx += 1
-        elif(self.current_token.type == 'Comment Delimiter'):        
+        elif(self.current_token.type == 'Comment Delimiter'):        # ignore if comment
             self.nextToken('Comment Delimiter')
             self.nextToken('Comment')
             self.nextToken('Linebreak')
-        else:
+        else:                                                        # invalid current toke
             self.err = f"Syntax Error:{self.current_token.line_num}:Expected {token_type} at {self.current_token.value}"
             raise Exception()
 
     # ------------------------LITERALS/EXPRESISON/VARIABLE------------------------
+    # grammar for expresison, literal, and variables
+    # infAr is boolean indicating that curr expression is not any of or all of
     def exprvar(self, infAr):
         childNodes = deque()
-        if (literal := self.literal()):
+        if (literal := self.literal()): 
             childNodes.append(literal)
         elif(self.current_token.type == 'Implicit Variable'):
             childNodes.append(ATNode('Implicit Variable', value = 'IT'))
@@ -41,6 +57,7 @@ class Parser:
         
         return ATNode('Exprvar', children_nodes = childNodes)
     
+    # grammar for literals
     def literal(self):
         childNodes = deque()
         nonStringLit = ['Numbar Literal', 'Numbr Literal', 'Troof Literal']
@@ -54,6 +71,7 @@ class Parser:
         
         return ATNode('Literal', children_nodes = childNodes)
     
+    # grammar for a yarn literal (string)
     def yarn_literal(self):
         childNodes = deque()
         if (self.current_token.type == 'String Delimiter'):
@@ -68,6 +86,7 @@ class Parser:
 
         return ATNode('Yarn Literal', children_nodes = childNodes)
 
+    # grammar for expressions
     def expression(self, infAr):
         childNodes = deque()
         if(add := self.binaryOp('Addition')):
@@ -109,6 +128,7 @@ class Parser:
         
         return ATNode('Expression', children_nodes = childNodes)
     
+    # grammar for binary operations, accepts operation
     def binaryOp(self, operation):
         childNodes = deque()
         if(self.current_token.type == operation):
@@ -131,6 +151,7 @@ class Parser:
         
         return ATNode(operation, children_nodes = childNodes)
     
+    # gramamr for unary operations
     def unaryOp(self, operation):
         childNodes = deque()
         if(self.current_token.type == operation):
@@ -146,6 +167,7 @@ class Parser:
         
         return ATNode(operation, children_nodes = childNodes)
     
+    # grammar for operations with infinite arity (smoosh, all of, any of)
     def infOp(self, operation, boolean):
         childNodes = deque()
         if(self.current_token.type == operation):
@@ -170,6 +192,7 @@ class Parser:
             else:
                 self.nextToken('Expression')
 
+        # makes MKAY conditional for smoosh
         if(boolean):
             self.nextToken('Infinite Bool End')
         elif(self.current_token.type == 'Infinite Bool End'):
@@ -177,6 +200,7 @@ class Parser:
 
         return ATNode(operation, children_nodes = childNodes)
 
+    # grammar for maek typecast expression
     def maek(self):
         childNodes = deque()
         if self.current_token.type == 'Maek Keyword':
@@ -200,6 +224,7 @@ class Parser:
     # ------------------------LITERALS/EXPRESISON/VARIABLE------------------------
 
     # ------------------------I/O------------------------
+    # grammar for VISIBLE (print)
     def visible(self):
         childNodes = deque()
         if(self.current_token.type == 'Output Keyword'):
@@ -220,6 +245,7 @@ class Parser:
             childNodes.append(ATNode('Newline Supress'))
         return ATNode('Output Statement', children_nodes = childNodes)
 
+    # grammar for provided parameter for visible (what to print)
     def printNode(self):
         childNodes = deque()
         exprvar = self.exprvar(True)
@@ -229,6 +255,7 @@ class Parser:
     
         return ATNode('Print Expressions', children_nodes = childNodes)
     
+    # grammar for gimmeh
     def gimmeh(self):
         childNodes = deque()
         if(self.current_token.type == 'Input Keyword'):
@@ -247,6 +274,7 @@ class Parser:
     # ------------------------I/O------------------------
     
     # ------------------------ASSIGNMENT------------------------
+    # grammar for variable declaration
     def declaration(self):
         childNodes = deque()
 
@@ -270,7 +298,7 @@ class Parser:
         
         return ATNode('Declaration Statement', children_nodes = childNodes)
 
-
+    # grammar for variable assignment
     def assignment(self):
         childNodes = deque()
         if(self.current_token.type == 'Implicit Variable'):
@@ -297,6 +325,7 @@ class Parser:
         
         return ATNode('Assignment Statement', children_nodes = childNodes)
 
+    # grammar for typecasting (IS NOW A)
     def typecast(self):
         childNodes = deque()
 
@@ -324,6 +353,7 @@ class Parser:
     # ------------------------ASSIGNMENT------------------------
 
     # ------------------------CONTROL------------------------
+    # grammar for a loop
     def loop(self):
         childNodes = deque()
         if(self.current_token.type == 'Loop Start'):
@@ -333,7 +363,7 @@ class Parser:
             return False
         
         childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
-        temp = self.current_token.value
+        temp = self.current_token.value         # for checking if identifier matches closing identifier
         self.nextToken('Variable Identifier')
 
         childNodes.append(ATNode('Loop Operation', value = self.current_token.value))
@@ -341,9 +371,12 @@ class Parser:
 
         self.nextToken('Loop Delimiter')
         childNodes.append(ATNode('Loop Delimiter'))
-
-        childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
-        self.nextToken('Variable Identifier')
+        
+        if (self.current_token.type == 'Variable Identifier' or self.current_token.type == 'Implicit Variable'):
+            childNodes.append(ATNode(self.current_token.type, value = self.current_token.value))
+            self.nextToken(self.current_token.type)
+        else:
+            self.nextToken('Variable Identifier')
 
         if(self.current_token.type == 'Condition Keyword'):
             childNodes.append(ATNode('Condition Keyword', value = self.current_token.value))
@@ -369,6 +402,7 @@ class Parser:
 
         return ATNode('Loop Statement', children_nodes = childNodes)
 
+    # grammar for GTFO (break)
     def gtfo(self):
         childNodes = deque()
         if self.current_token.type == 'Break':
@@ -379,6 +413,7 @@ class Parser:
         
         return(ATNode('Break Statement', children_nodes = childNodes))
     
+    # grammar for switch statements
     def switch(self):
         childNodes = deque()
         if self.current_token.type == 'Switch-case Start':
@@ -405,6 +440,7 @@ class Parser:
 
         return ATNode('Switch Statement', children_nodes = childNodes)
 
+    # grammar for cases in switch
     def case(self):
         
         childNodes = deque()
@@ -424,6 +460,7 @@ class Parser:
         
         return ATNode('Case', children_nodes = childNodes)
 
+    # gramamr for the default case (OMGWTF)
     def caseDefault(self):
         childNodes = deque()
 
@@ -436,7 +473,8 @@ class Parser:
             childNodes.append(statement)
         
         return ATNode('Default Case', children_nodes = childNodes)
-        
+    
+    # grammar for if-else block
     def ifElse(self):
         childNodes = deque()
 
@@ -463,6 +501,7 @@ class Parser:
         childNodes.append(ATNode('If-else End'))
         return(ATNode('If-else Statement', children_nodes = childNodes))
 
+    # grammar for the ya rly block
     def ifBlock(self):
         childNodes = deque()
 
@@ -476,6 +515,7 @@ class Parser:
 
         return ATNode('If', children_nodes = childNodes)
 
+    # grammar for no wai block
     def elseBlock(self):
         childNodes = deque()
         self.nextToken('Else Keyword')
@@ -488,6 +528,7 @@ class Parser:
         
         return ATNode('Else', children_nodes = childNodes)
 
+    # grammar for else-if block
     def mebbe(self):
         childNodes = deque()
 
@@ -509,6 +550,7 @@ class Parser:
     # ------------------------CONTROL------------------------
 
     # ------------------------MAIN------------------------
+    # grammar for multiline comments
     def multiComment(self):
         childNodes = deque()
 
@@ -524,7 +566,10 @@ class Parser:
         self.nextToken('Multiline Comment End')
         childNodes.append(ATNode('Multiline Comment End'))
         return ATNode('Multiline Comment', children_nodes = childNodes)
-        
+    
+    # grammar for statements
+    # inProgBlock checks if the current statement is within a code block - avoide declaring a statement inside
+    # a code block (switch, if-else, loops)
     def statement(self, inProgBlock = False):
         childNodes = deque()
 
@@ -568,10 +613,12 @@ class Parser:
 
         self.nextToken('Linebreak')
         return ATNode('Statement', children_nodes = childNodes)
-        
+    
+    # grammar for a lol code
     def lolProgram(self):
-        treeNode = deque()
+        treeNode = deque()          # symbol tree
 
+        # checks syntax before HAI
         while(self.current_token.type != 'Code Start' and self.token_idx + 1 < len(self.tokens)):
             if self.current_token.type == 'Comment Delimiter':
                 self.nextToken('Comment Delimiter')
@@ -604,6 +651,7 @@ class Parser:
         self.nextToken('Code End')
         treeNode.append(ATNode('Code End'))
 
+        # checks syntax after KTHXBYE
         while(self.token_idx < len(self.tokens)):
             if self.current_token.type == 'Comment Delimiter':
                 self.nextToken('Comment Delimiter')

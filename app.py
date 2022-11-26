@@ -1,14 +1,22 @@
+# Author: Christian Olo
+# Program Description: A LOLCode interpreter developed using python
+
+# The source code for the GUI of the interpreter
+
+# imports the tkinter module
 from tkinter import *
 from tkinter.filedialog import askopenfilename, asksaveasfilename      # for choosing file
 from tkinter import ttk                 #for tables of lexemes and symbols
 
+# imports the lexer, parser, and semantic analyzer
 from Lexer import Lexer
 from Parser import Parser
 from SymbolAnalyzer import SymbolAnalyzer
 
 import tkinter.font as tkfont
 
-def openFile():        #for opening file
+# for opening file
+def openFile():
     global label3
     fp = askopenfilename(
         filetypes=[("LOL CODE Files", "*.lol"), ("All Files", "*.*")]
@@ -22,7 +30,8 @@ def openFile():        #for opening file
         txt_edit.insert(END, text)
     window.title(f"Text Editor Application - {fp}")
 
-def saveFile():        #for saving file
+# saves the content of the text editor to a file
+def saveFile(): 
     fp = asksaveasfilename(
         defaultextension="lol",
         filetypes=[("LOL CODE Files", "*.lol"), ("All Files", "*.*")],
@@ -34,9 +43,11 @@ def saveFile():        #for saving file
         output_file.write(text)
     window.title(f"Text Editor Application - {fp}")
 
+# event handler for the execute button, analyzes the contents of the text editor
 def execute():
     global txt_edit, stdin, stdout
     
+    # resets the output fields
     lexemeTable.delete(*lexemeTable.get_children())     #reset lexeme table
     symbolTable.delete(*symbolTable.get_children()) 
     stdout.delete('1.0', 'end')
@@ -46,6 +57,7 @@ def execute():
     if code.isspace():
         return
     
+    # checks if source code passes the lexeme analyzer, prints error if found
     try:
         lex = Lexer(code)
         lexemes = lex.tokenize()
@@ -54,8 +66,8 @@ def execute():
         stdout.configure(fg='red')
         return
 
+    # checks if source code passes the syntax analyzer, prints error if found
     symbolTree = None
-    
     if (len(lexemes) > 2):
         try:
             parser = Parser(lexemes)
@@ -64,7 +76,8 @@ def execute():
             stdout.insert(END, parser.err)
             stdout.configure(fg='red')
             return
-        
+    
+    # outputs the lexems
     for lex in lexemes:         #insert values
         if (lex.type != 'Linebreak' and
             lex.type != 'Comment' and
@@ -75,6 +88,7 @@ def execute():
             lex.type != 'Multiline Comment End'):
             lexemeTable.insert(parent='', index='end', values=(lex.value, lex.type))  
     
+    # performs semantic analysis
     if(symbolTree):
         inputs = stdin.get("1.0",'end-1c').split('\n')
         try:
@@ -97,7 +111,6 @@ window.configure(background = "gray")
 window.geometry("1200x655")
 
 #labels
-
 label1 = Label(window, text = "LEXEMES", background = "white")
 label2 = Label(window, text = "SYMBOL TABLE", background = "white")
 label3 = Label(window, text = 'No file opened', background = "white")
@@ -122,7 +135,6 @@ txt_edit.place(x = 20, y = 40)
 
 #lexemes
 lexemeTable = ttk.Treeview(window, height=14)
-
 lexemeTable['column'] = ("Lexeme", "Classification")
 lexemeTable.column("#0", width=0, stretch=NO)
 lexemeTable.column("Lexeme", anchor=W, width=123)
@@ -133,7 +145,6 @@ lexemeTable.heading("Classification", text="Classification", anchor=W)
 
 #symbols
 symbolTable = ttk.Treeview(window, height=14)
-
 symbolTable['column'] = ("Identifier", "Value")
 symbolTable.column("#0", width=0, stretch=NO)
 symbolTable.column("Identifier", anchor=W, width=123)
@@ -142,9 +153,8 @@ symbolTable.heading("#0", text="", anchor=W)
 symbolTable.heading("Identifier", text="Identifier", anchor=W)
 symbolTable.heading("Value", text="Value", anchor=W)
 
-#listbox for execution
+# stdin and stdout fields
 stdout = Text(window, height = 18, width = 112)
-
 stdin = Text(window, height=17, width=30)
 font = tkfont.Font(font=stdin['font'])
 tab = font.measure('    ')

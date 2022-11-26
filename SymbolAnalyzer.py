@@ -1,5 +1,9 @@
-# TASK: improve GUI
-from Symbol import Symbol
+# Author: Christian Olo
+# Program Description: A LOLCode interpreter developed using python
+
+# source code for the semantic analyzer
+
+from Symbol import Symbol                   # uses the symbol class to store valid symbol objects
 import math
 import re
 
@@ -7,11 +11,12 @@ class SymbolAnalyzer:
     def __init__(self, atnode_tree, stdin = []):
         self.atnode_tree = atnode_tree
         self.symbol_table = {'IT': Symbol('Noob', value = None)}
-        self.stdin = stdin
-        self.output = ''
-        self.err = ''
+        self.stdin = stdin                                          # pre-defined user inputs
+        self.output = ''                                            # stores the stdout
+        self.err = ''                           
         self.line_number = 1
 
+    # main function to start the analyzer
     def analyze(self):
         for node in self.atnode_tree.children_nodes:
             if node.type == 'Statement':
@@ -24,6 +29,7 @@ class SymbolAnalyzer:
         
         return self.symbol_table, self.output
     
+    # analyzes a statement
     def analyzeStatement(self, node):
         statement = node[0]
         if statement.type == 'Output Statement':
@@ -51,49 +57,58 @@ class SymbolAnalyzer:
 
         return 0
 
+    # analyzes visible statement
     def visible(self, statement):
         printNodes = list(statement.children_nodes)[1:]
         toPrint = ''
+        # iteratively checks the provided to be printed values for visible
         for i in printNodes:
             expression = i.children_nodes[0]
             expValue = self.getValue(expression.children_nodes[0])
             if expValue.type != 'Yarn Literal':
                 expValue = self.strTypecast(expValue)
             toPrint += expValue.value
-        self.output += toPrint + '\n'
+        self.output += toPrint + '\n'           # stores the result to later print to the GUI terminal
 
+    # analyzes declaration statement
     def declaration(self, statement):
         variable = statement.children_nodes[1].value
 
-        if len(statement.children_nodes) > 2:
-            value = self.getValue(statement.children_nodes[3].children_nodes[0])
+        if len(statement.children_nodes) > 2:       # value is initialized
+            value = self.getValue(statement.children_nodes[3].children_nodes[0])    # gets the value of the expression
             self.symbol_table[variable] = Symbol(value.type, value.value)
         else:
-            self.symbol_table[variable] = Symbol('Noob')
+            self.symbol_table[variable] = Symbol('Noob')    # set as None
     
+    # analyzes input statements (uses stdin)
     def gimmeh(self, statement):
         variable = statement.children_nodes[1].value
-        self.lookup(variable)
+        self.lookup(variable)       # checks if the variable is declared
+        # uses the value provided in stdin
         if len(self.stdin) > 0:
             temp = self.stdin[0]
             self.stdin.pop(0)
         else:
             temp = ''
+        # typecasts numeric value to float or int
         try:
             self.symbol_table[variable] = self.numTypecast(Symbol('Yarn Literal', temp))
         except:
             self.symbol_table[variable] = Symbol('Yarn Literal', temp)
 
+    # analyzes assignment statement
     def assignment(self, statement):
         variable = statement.children_nodes[0].value
         self.lookup(variable)
         value = self.getValue(statement.children_nodes[2].children_nodes[0])
         self.symbol_table[variable] = value
     
+    # analyzes expressions
     def expression(self, statement):
         value = self.getValue(statement.children_nodes[0])
         self.symbol_table['IT'] = value
 
+    # analyzes typecase (IS NOW A) statement
     def cast(self, statement):
         variable = statement.children_nodes[0].value
         self.lookup(variable)
@@ -103,11 +118,13 @@ class SymbolAnalyzer:
 
         self.symbol_table[variable] = newValue
 
+    # analyzes loop statement
     def loop(self, statement):
-        operation = statement.children_nodes[2].value
-        variable = statement.children_nodes[4].value
+        operation = statement.children_nodes[2].value   # uppin/nerfin
+        variable = statement.children_nodes[4].value    # variable to change
         self.lookup(variable)
 
+        # typecasts the value to numerical types if not numbr or numbar
         if self.symbol_table[variable].type != 'Numbr Literal' and self.symbol_table[variable].type != 'Numbar Literal':
             self.symbol_table[variable] = self.numTypecast(self.symbol_table[variable])
         
@@ -115,6 +132,8 @@ class SymbolAnalyzer:
         expression = None
         
         stIdx = 5
+
+        # checks if there is a provided condition
         if statement.children_nodes[5].type == 'Condition Keyword':
             condition = statement.children_nodes[5].value
             expressionNode = statement.children_nodes[6]
@@ -123,6 +142,7 @@ class SymbolAnalyzer:
         
         self.line_number += 1
 
+        # code block
         statements = list(statement.children_nodes)[stIdx:]
 
         temp = self.symbol_table[variable].value
@@ -131,6 +151,7 @@ class SymbolAnalyzer:
         tempLine = self.line_number
         init = True
         while True:
+            # checks condition, breaks if condition is met
             if condition == 'TIL' or condition == 'WILE':
                 expression = self.evaluateExpression(expressionNode.children_nodes[0])
                 if expression.type != 'Troof Literal':
@@ -138,7 +159,8 @@ class SymbolAnalyzer:
                 if ((condition == 'TIL' and expression.value == 'WIN') or
                 (condition == 'WILE' and expression.value == 'FAIL')):
                     break
-            
+
+            # analyzes statements within the loop
             for statement in statements:
                 if statement.type == 'Loop End':
                     break
@@ -161,6 +183,7 @@ class SymbolAnalyzer:
             init = False
         self.line_number = tempLine + len(statements) - 2
 
+    # analyzes switch statements
     def switch(self, statement):
         temp = self.symbol_table['IT'].value
         cases = list(statement.children_nodes)[1:]
@@ -168,6 +191,7 @@ class SymbolAnalyzer:
         i = 0
         matched = False
 
+        # analyzes the cases
         while cases[i].type == 'Case':
             omg = cases[i]
             value = self.getValue(omg.children_nodes[1])
@@ -178,6 +202,7 @@ class SymbolAnalyzer:
             self.line_number += len(omg.children_nodes) - 1
             i += 1
         
+        # if a case is matched
         if matched:
             tempLine = self.line_number
             statements = list(cases[i].children_nodes)[2:]
@@ -194,7 +219,7 @@ class SymbolAnalyzer:
             while cases[i].type == 'Case' or cases[i].type == 'Default Case':
                 self.line_number += len(cases[i].children_nodes) - 1 if cases[i].type == 'Case' else len(cases[i].children_nodes)
                 i += 1
-        elif cases[-2].type == 'Default Case':
+        elif cases[-2].type == 'Default Case':              # default case
             tempLine = self.line_number
             statements = list(cases[-2].children_nodes)[1:]
             for statement in statements:
@@ -207,6 +232,7 @@ class SymbolAnalyzer:
                     break
             self.line_number = tempLine + len(cases[-2].children_nodes)
 
+    # analyzes ifElse statements
     def ifElse(self, statement):
         temp = self.symbol_table['IT']
         
@@ -217,6 +243,7 @@ class SymbolAnalyzer:
 
         status = 0
 
+        # ya rly
         if temp.value == 'WIN':
             block = statement.children_nodes[1]
             self.line_number += 1
@@ -236,6 +263,7 @@ class SymbolAnalyzer:
             self.line_number += len(statement.children_nodes[1].children_nodes)
             i = 2
             matched = False
+            # mebbe
             while statement.children_nodes[i].type == 'Else-if':
                 conditionNode = statement.children_nodes[i].children_nodes[1]
                 condition = self.getValue(conditionNode.children_nodes[0])
@@ -263,7 +291,7 @@ class SymbolAnalyzer:
                     self.line_number += len(statement.children_nodes[i].children_nodes) - 1
                 i += 1
             if not matched:
-                if statement.children_nodes[i].type == 'Else':
+                if statement.children_nodes[i].type == 'Else':  # else
                     block = statement.children_nodes[i]
                     statements = list(block.children_nodes)[1:]
                     for s in statements:
@@ -274,6 +302,7 @@ class SymbolAnalyzer:
                         self.line_number += 1
         return status
     # --------------------Getting Values of expresison/literal/variable-------------------
+    # gets the value of an expression, literal, or variable, return a symbol
     def getValue(self, expression):
         expType = expression
 
@@ -291,9 +320,10 @@ class SymbolAnalyzer:
             variable = expType.value
             self.lookup(variable)
             return self.symbol_table[variable]
-        else:
+        else:       # expression
             return self.evaluateExpression(expType.children_nodes[0])
     
+    # evaulates an expression
     def evaluateExpression(self, expression):
         if (expression.type == 'Addition' or 
         expression.type == 'Subtraction' or
@@ -319,17 +349,18 @@ class SymbolAnalyzer:
         elif (expression.type == 'Maek'):
             return self.maek(expression)
     
+    # evaulates arithmetic operation
     def arithmetic(self, expression):
         operands = expression.children_nodes
         op1Exp = self.getValue(operands[1].children_nodes[0])
         op2Exp = self.getValue(operands[2].children_nodes[0])
 
+        # typcasts operands if not numeric type
         if op1Exp.type != 'Numbr Literal' and op1Exp.type != 'Numbar Literal':
             temp = self.numTypecast(op1Exp)
             op1 = temp.value
         else:
             op1 = op1Exp.value
-        
         if op2Exp.type != 'Numbr Literal' and op2Exp.type != 'Numbar Literal':
             temp = self.numTypecast(op2Exp)
             op2 = temp.value
@@ -359,10 +390,12 @@ class SymbolAnalyzer:
         else:
             return Symbol('Numbar Literal', ans)
 
+    # evaulates boolean expressions
     def boolean(self, expression):
         operands = expression.children_nodes
         op1Exp = self.getValue(operands[1].children_nodes[0])
 
+        # typecasting if necessary
         if op1Exp.type == 'Troof Literal':
             if op1Exp.value == 'WIN':
                 op1 = True
@@ -374,7 +407,6 @@ class SymbolAnalyzer:
                 op1 = True
             else:
                 op1 = False
-        
         if expression.type != 'Not':
             op2Exp = self.getValue(operands[2].children_nodes[0])
             if op2Exp.type == 'Troof Literal':
@@ -403,6 +435,7 @@ class SymbolAnalyzer:
         else:
             return Symbol('Troof Literal', 'FAIL')
 
+    # evaluate all of an any of
     def infBoolean(self, expression):
         operations = list(expression.children_nodes)[2:]
 
@@ -431,6 +464,7 @@ class SymbolAnalyzer:
         else:
             return Symbol('Troof Literal', 'FAIL')
 
+    # evaluates smoosh operation
     def smoosh(self, expression):
         operations = list(expression.children_nodes)[1:]
 
@@ -443,6 +477,7 @@ class SymbolAnalyzer:
         
         return Symbol('Yarn Literal', value = toConcat)
 
+    # analyze comparison expressions
     def comparison(self, expression):
         operands = expression.children_nodes
         op1Exp = self.getValue(operands[1].children_nodes[0])
@@ -468,6 +503,7 @@ class SymbolAnalyzer:
         else:
             return Symbol('Troof Literal', 'FAIL')
     
+    # evaluates maek expression (explicit typecasting)
     def maek(self, expression):
         value = self.getValue(expression.children_nodes[1].children_nodes[0])
         dataType = expression.children_nodes[2].value
@@ -475,6 +511,7 @@ class SymbolAnalyzer:
     # --------------------Getting Values of expresison/literal/variable-------------------
 
     # --------------------Implicit typecasting-------------------
+    # typecast a value to boolean
     def boolTypecast(self, expression):
         if expression.type == 'Yarn Literal':
             if expression.value == '':
@@ -492,6 +529,7 @@ class SymbolAnalyzer:
             self.err = f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to TROOF"
             raise Exception()
     
+    # typecasts a value to numerical type
     def numTypecast(self, expression):
         if expression.type == 'Yarn Literal':
             if re.match(r"-?[0-9]+\.[0-9]+$", expression.value):
@@ -510,6 +548,7 @@ class SymbolAnalyzer:
             self.err = f"Semantic Error:{self.line_number}: {expression.value} cannot be typecasted to numerical data type"
             raise Exception()
 
+    # typecasts the value to a string (yarn)
     def strTypecast(self, expression):
         if expression.type == 'Numbr Literal':
             return Symbol('Yarn Literal', str(expression.value))
@@ -523,6 +562,7 @@ class SymbolAnalyzer:
     # --------------------Implicit typecasting-------------------
 
     # --------------------Explicit typecasting-------------------
+    # symbol is the to be typecasted and data type is the target data type
     def typecast(self, symbol, dataType):
         if symbol.type == 'Noob':
             if dataType == 'NUMBR':
@@ -601,6 +641,7 @@ class SymbolAnalyzer:
     # --------------------Explicit typecasting-------------------
 
     # --------------------Utils-------------------
+    # checks if a variable is declared
     def lookup(self, key):
         if key in self.symbol_table.keys():
             return
