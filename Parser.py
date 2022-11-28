@@ -287,7 +287,7 @@ class Parser:
         childNodes.append(ATNode('Variable Identifier', value = self.current_token.value))
         self.nextToken('Variable Identifier')
 
-        if self.current_token.type != 'Linebreak':
+        if self.current_token.type == 'Variable Assignment':
             self.nextToken('Variable Assignment')
             childNodes.append(ATNode('Variable Assignment'))
 
